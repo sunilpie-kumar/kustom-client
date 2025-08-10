@@ -1,117 +1,115 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
-  DialogTitle,
-  Box,
-  Typography,
-  Avatar,
-  IconButton,
-  Button,
-  TextField,
-  InputAdornment,
-  Chip,
-} from '@mui/material';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
-import SendIcon from '@mui/icons-material/Send';
-import CloseIcon from '@mui/icons-material/Close';
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import ImageIcon from '@mui/icons-material/Image';
-import PersonIcon from '@mui/icons-material/Person';
-import SupportAgentIcon from '@mui/icons-material/SupportAgent';
-
-const getFileIcon = (type) => {
-  if (type.startsWith('image/')) return <ImageIcon fontSize="small" />;
-  return <InsertDriveFileIcon fontSize="small" />;
-};
-
-const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Send,
+  User,
+  Bot,
+  Paperclip,
+  X,
+  FileText,
+  Image as ImageIcon
+} from "lucide-react"
 
 const ChatModal = ({ isOpen, onClose, provider }) => {
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [attachments, setAttachments] = useState([]);
-  const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const [messages, setMessages] = useState([])
+  const [newMessage, setNewMessage] = useState("")
+  const [attachments, setAttachments] = useState([])
+  const messagesEndRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     if (provider && isOpen) {
+      // Initialize with a welcome message from the provider
       setMessages([
         {
-          id: '1',
+          id: "1",
           text: `Hello! I'm ${provider.name} from ${provider.businessName}. How can I help you today?`,
-          sender: 'provider',
-          timestamp: new Date(),
-        },
-      ]);
+          sender: "provider",
+          timestamp: new Date()
+        }
+      ])
     }
-  }, [provider, isOpen]);
+  }, [provider, isOpen])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
 
-  const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files || []);
-    files.forEach((file) => {
+  const handleFileSelect = e => {
+    const files = Array.from(e.target.files || [])
+
+    files.forEach(file => {
+      // Check file type and size
       const allowedTypes = [
-        'image/',
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      ];
-      const isAllowed = allowedTypes.some((type) => file.type.startsWith(type));
+        "image/",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ]
+      const isAllowed = allowedTypes.some(type => file.type.startsWith(type))
+
       if (!isAllowed) {
-        alert('Only images, PDF, and Word documents are allowed');
-        return;
+        alert("Only images, PDF, and Word documents are allowed")
+        return
       }
+
       if (file.size > 10 * 1024 * 1024) {
-        alert('File size must be less than 10MB');
-        return;
+        // 10MB limit
+        alert("File size must be less than 10MB")
+        return
       }
+
       const attachment = {
         id: Date.now().toString() + Math.random(),
         name: file.name,
         type: file.type,
         size: file.size,
-        url: URL.createObjectURL(file),
-      };
-      setAttachments((prev) => [...prev, attachment]);
-    });
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const removeAttachment = (id) => {
-    setAttachments((prev) => {
-      const attachment = prev.find((a) => a.id === id);
-      if (attachment) {
-        URL.revokeObjectURL(attachment.url);
+        url: URL.createObjectURL(file)
       }
-      return prev.filter((a) => a.id !== id);
-    });
-  };
 
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (!newMessage.trim() && attachments.length === 0) return;
+      setAttachments(prev => [...prev, attachment])
+    })
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
+  const removeAttachment = id => {
+    setAttachments(prev => {
+      const attachment = prev.find(a => a.id === id)
+      if (attachment) {
+        URL.revokeObjectURL(attachment.url)
+      }
+      return prev.filter(a => a.id !== id)
+    })
+  }
+
+  const handleSendMessage = e => {
+    e.preventDefault()
+    if (!newMessage.trim() && attachments.length === 0) return
+
     const userMessage = {
       id: Date.now().toString(),
       text: newMessage,
-      sender: 'user',
+      sender: "user",
       timestamp: new Date(),
-      attachments: attachments.length > 0 ? [...attachments] : undefined,
-    };
-    setMessages((prev) => [...prev, userMessage]);
-    setNewMessage('');
-    setAttachments([]);
+      attachments: attachments.length > 0 ? [...attachments] : undefined
+    }
+
+    setMessages(prev => [...prev, userMessage])
+    setNewMessage("")
+    setAttachments([])
+
+    // Simulate provider response
     setTimeout(() => {
       const providerResponse = {
         id: (Date.now() + 1).toString(),
@@ -119,164 +117,160 @@ const ChatModal = ({ isOpen, onClose, provider }) => {
           attachments.length > 0
             ? "Thank you for sharing those files! I'll review them and get back to you with detailed information about our services."
             : "Thank you for your message! I'll get back to you shortly with more details about our services.",
-        sender: 'provider',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, providerResponse]);
-    }, 1000);
-  };
+        sender: "provider",
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, providerResponse])
+    }, 1000)
+  }
 
-  if (!provider) return null;
+  const formatFileSize = bytes => {
+    if (bytes === 0) return "0 Bytes"
+    const k = 1024
+    const sizes = ["Bytes", "KB", "MB", "GB"]
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+  }
+
+  const getFileIcon = type => {
+    if (type.startsWith("image/")) return ImageIcon
+    return FileText
+  }
+
+  if (!provider) return null
 
   return (
-    <Dialog open={isOpen} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar src={provider.image} alt={provider.name} />
-          <Typography variant="h6">Chat with {provider.name}</Typography>
-        </Box>
-      </DialogTitle>
-      <DialogContent sx={{ height: 600, display: 'flex', flexDirection: 'column', p: 0 }}>
-        <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
-          {messages.map((message) => (
-            <Box
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md h-[600px] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <img
+              src={provider.image}
+              alt={provider.name}
+              className="w-8 h-8 rounded-full object-cover"
+            />
+            Chat with {provider.name}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto space-y-4 p-4">
+          {messages.map(message => (
+            <div
               key={message.id}
-              sx={{
-                display: 'flex',
-                justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start',
-                mb: 2,
-              }}
+              className={`flex ${
+                message.sender === "user" ? "justify-end" : "justify-start"
+              }`}
             >
-              <Box
-                sx={{
-                  maxWidth: '80%',
-                  borderRadius: 2,
-                  p: 2,
-                  bgcolor: message.sender === 'user' ? 'primary.main' : 'grey.100',
-                  color: message.sender === 'user' ? '#fff' : 'text.primary',
-                }}
+              <div
+                className={`max-w-[80%] rounded-lg p-3 ${
+                  message.sender === "user"
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-100 text-gray-900"
+                }`}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  {message.sender === 'user' ? (
-                    <PersonIcon fontSize="small" />
+                <div className="flex items-center gap-2 mb-1">
+                  {message.sender === "user" ? (
+                    <User className="w-4 h-4" />
                   ) : (
-                    <SupportAgentIcon fontSize="small" />
+                    <Bot className="w-4 h-4" />
                   )}
-                  <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                  <span className="text-xs opacity-75">
                     {message.timestamp.toLocaleTimeString()}
-                  </Typography>
-                </Box>
-                {message.text && (
-                  <Typography variant="body2" sx={{ mb: message.attachments ? 1 : 0 }}>
-                    {message.text}
-                  </Typography>
+                  </span>
+                </div>
+                {message.text && <p className="text-sm mb-2">{message.text}</p>}
+
+                {/* Display attachments */}
+                {message.attachments && message.attachments.length > 0 && (
+                  <div className="space-y-2">
+                    {message.attachments.map(attachment => {
+                      const FileIcon = getFileIcon(attachment.type)
+                      return (
+                        <div
+                          key={attachment.id}
+                          className="flex items-center gap-2 p-2 bg-white/20 rounded text-xs"
+                        >
+                          <FileIcon className="w-4 h-4" />
+                          <span className="flex-1 truncate">
+                            {attachment.name}
+                          </span>
+                          <span className="text-xs opacity-75">
+                            {formatFileSize(attachment.size)}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
                 )}
-                {message.attachments &&
-                  message.attachments.length > 0 &&
-                  message.attachments.map((attachment) => (
-                    <Box
-                      key={attachment.id}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        p: 1,
-                        bgcolor: 'white',
-                        borderRadius: 1,
-                        mb: 1,
-                      }}
-                    >
-                      {getFileIcon(attachment.type)}
-                      <Typography variant="body2" sx={{ flex: 1, fontSize: 12 }}>
-                        {attachment.name}
-                      </Typography>
-                      <Typography variant="caption" sx={{ opacity: 0.7 }}>
-                        {formatFileSize(attachment.size)}
-                      </Typography>
-                    </Box>
-                  ))}
-              </Box>
-            </Box>
+              </div>
+            </div>
           ))}
           <div ref={messagesEndRef} />
-        </Box>
+        </div>
 
         {/* File attachments preview */}
         {attachments.length > 0 && (
-          <Box sx={{ borderTop: 1, borderColor: 'divider', p: 2 }}>
-            {attachments.map((attachment) => (
-              <Box
-                key={attachment.id}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  p: 1,
-                  bgcolor: 'grey.50',
-                  borderRadius: 1,
-                  mb: 1,
-                }}
-              >
-                {getFileIcon(attachment.type)}
-                <Typography variant="body2" sx={{ flex: 1, fontSize: 13 }}>
-                  {attachment.name}
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'grey.600' }}>
-                  {formatFileSize(attachment.size)}
-                </Typography>
-                <IconButton
-                  size="small"
-                  onClick={() => removeAttachment(attachment.id)}
-                  sx={{ width: 24, height: 24 }}
-                >
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              </Box>
-            ))}
-          </Box>
+          <div className="border-t p-4">
+            <div className="space-y-2">
+              {attachments.map(attachment => {
+                const FileIcon = getFileIcon(attachment.type)
+                return (
+                  <div
+                    key={attachment.id}
+                    className="flex items-center gap-2 p-2 bg-gray-50 rounded"
+                  >
+                    <FileIcon className="w-4 h-4 text-gray-600" />
+                    <span className="flex-1 text-sm truncate">
+                      {attachment.name}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {formatFileSize(attachment.size)}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removeAttachment(attachment.id)}
+                      className="h-6 w-6 p-0"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         )}
 
-        <Box
-          component="form"
-          onSubmit={handleSendMessage}
-          sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 2, borderTop: 1, borderColor: 'divider' }}
-        >
+        <form onSubmit={handleSendMessage} className="flex gap-2 p-4">
           <input
             ref={fileInputRef}
             type="file"
             multiple
             accept="image/*,.pdf,.doc,.docx"
             onChange={handleFileSelect}
-            style={{ display: 'none' }}
+            className="hidden"
           />
-          <IconButton
+          <Button
             type="button"
+            size="icon"
+            variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            color="primary"
-            sx={{ bgcolor: 'grey.100' }}
           >
-            <AttachFileIcon fontSize="small" />
-          </IconButton>
-          <TextField
+            <Paperclip className="w-4 h-4" />
+          </Button>
+          <Input
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={e => setNewMessage(e.target.value)}
             placeholder="Type your message..."
-            fullWidth
-            size="small"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton type="submit" color="primary">
-                    <SendIcon fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
+            className="flex-1"
           />
-        </Box>
+          <Button type="submit" size="icon">
+            <Send className="w-4 h-4" />
+          </Button>
+        </form>
       </DialogContent>
     </Dialog>
-  );
-};
+  )
+}
 
-export default ChatModal;
+export default ChatModal

@@ -1,104 +1,130 @@
-import { useState } from 'react';
+import { useState } from "react"
 import {
   Dialog,
   DialogContent,
-  DialogTitle,
-  DialogActions,
-  Button,
-  Box,
-  Typography,
-  MenuItem,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import {
   Select,
-  InputLabel,
-  FormControl,
-} from '@mui/material';
-import { format } from 'date-fns';
-// import Calendar from '@/components/ui/Calendar'; // Update this import if you have a MUI-compatible calendar
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
 
 const timeSlots = [
-  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
-  '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'
-];
+  "09:00",
+  "09:30",
+  "10:00",
+  "10:30",
+  "11:00",
+  "11:30",
+  "12:00",
+  "12:30",
+  "13:00",
+  "13:30",
+  "14:00",
+  "14:30",
+  "15:00",
+  "15:30",
+  "16:00",
+  "16:30",
+  "17:00",
+  "17:30"
+]
 
 const BookingModal = ({ isOpen, onClose, provider }) => {
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedDate, setSelectedDate] = useState()
+  const [selectedTime, setSelectedTime] = useState()
 
   const handleBooking = () => {
-    if (!selectedDate || !selectedTime) return;
+    if (!selectedDate || !selectedTime) return
 
     const bookingDetails = {
       provider: provider?.businessName,
-      date: format(selectedDate, 'PPP'),
+      date: format(selectedDate, "PPP"),
       time: selectedTime,
-      customer: JSON.parse(localStorage.getItem('user') || '{}')
-    };
+      customer: JSON.parse(localStorage.getItem("user") || "{}")
+    }
 
-    console.log('Booking confirmed:', bookingDetails);
+    console.log("Booking confirmed:", bookingDetails)
 
-    alert(`Booking confirmed with ${provider?.name} on ${format(selectedDate, 'PPP')} at ${selectedTime}`);
+    // Simulate sending booking to provider
+    alert(
+      `Booking confirmed with ${provider?.name} on ${format(
+        selectedDate,
+        "PPP"
+      )} at ${selectedTime}`
+    )
 
-    onClose();
-    setSelectedDate(null);
-    setSelectedTime('');
-  };
+    onClose()
+    setSelectedDate(undefined)
+    setSelectedTime(undefined)
+  }
 
-  if (!provider) return null;
+  if (!provider) return null
 
   return (
-    <Dialog open={isOpen} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Book a Call with {provider.name}</DialogTitle>
-      <DialogContent>
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 2 }}>
-            Select Date
-          </Typography>
-          {/* <Calendar
-            selected={selectedDate}
-            onSelect={setSelectedDate}
-            disabled={(date) => date < new Date() || date < new Date("1900-01-01")}
-          /> */}
-        </Box>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Book a Call with {provider.name}</DialogTitle>
+        </DialogHeader>
 
-        {selectedDate && (
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 2 }}>
-              Select Time
-            </Typography>
-            <FormControl fullWidth>
-              <InputLabel id="time-slot-label">Choose a time slot</InputLabel>
-              <Select
-                labelId="time-slot-label"
-                value={selectedTime}
-                label="Choose a time slot"
-                onChange={(e) => setSelectedTime(e.target.value)}
-              >
-                {timeSlots.map((time) => (
-                  <MenuItem key={time} value={time}>
-                    {time}
-                  </MenuItem>
-                ))}
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-medium mb-2">Select Date</h3>
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              disabled={date =>
+                date < new Date() || date < new Date("1900-01-01")
+              }
+              initialFocus
+              className={cn("p-3 pointer-events-auto border rounded-md")}
+            />
+          </div>
+
+          {selectedDate && (
+            <div>
+              <h3 className="font-medium mb-2">Select Time</h3>
+              <Select value={selectedTime} onValueChange={setSelectedTime}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a time slot" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeSlots.map(time => (
+                    <SelectItem key={time} value={time}>
+                      {time}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
-            </FormControl>
-          </Box>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button variant="outlined" onClick={onClose} fullWidth>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleBooking}
-          disabled={!selectedDate || !selectedTime}
-          variant="contained"
-          fullWidth
-        >
-          Confirm Booking
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
+            </div>
+          )}
 
-export default BookingModal;
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleBooking}
+              disabled={!selectedDate || !selectedTime}
+              className="flex-1"
+            >
+              Confirm Booking
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export default BookingModal

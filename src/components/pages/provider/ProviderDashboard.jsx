@@ -1,376 +1,408 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
 import {
-  Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
-  Typography,
-  Box,
-  Tabs,
-  Tab,
-  Badge,
-  Divider,
-  CircularProgress,
-} from '@mui/material';
-import SettingsIcon from '@mui/icons-material/Settings';
-import MailIcon from '@mui/icons-material/Mail';
-import BusinessIcon from '@mui/icons-material/Business';
-import PersonIcon from '@mui/icons-material/Person';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import PhoneIcon from '@mui/icons-material/Phone';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import GroupIcon from '@mui/icons-material/Group';
-import LogoutIcon from '@mui/icons-material/Logout';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import CancelIcon from '@mui/icons-material/Cancel';
-import { useNavigate } from 'react-router-dom';
-// import { useToast } from '@/hooks/use-toast';
-
-const tabLabels = ['Profile', 'Analytics', 'Bookings', 'Settings'];
+  CardTitle
+} from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import {
+  User,
+  Building2,
+  MapPin,
+  Phone,
+  Mail,
+  Calendar,
+  Settings,
+  BarChart3,
+  Users,
+  LogOut,
+  CheckCircle2,
+  Clock,
+  XCircle
+} from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import { useToast } from "@/hooks/use-toast"
 
 const ProviderDashboard = () => {
-  const navigate = useNavigate();
-  // const { toast } = useToast();
-  const [provider, setProvider] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [tabIndex, setTabIndex] = useState(0);
+  const navigate = useNavigate()
+  const { toast } = useToast()
+  const [provider, setProvider] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const storedProvider = localStorage.getItem('provider');
+    // Check if user is logged in
+    const storedProvider = localStorage.getItem("provider")
     if (!storedProvider) {
-      navigate('/provider-auth');
-      return;
+      navigate("/provider-auth")
+      return
     }
+
     try {
-      const providerData = JSON.parse(storedProvider);
-      setProvider(providerData);
-    } catch {
-      navigate('/provider-auth');
+      const providerData = JSON.parse(storedProvider)
+      setProvider(providerData)
+    } catch (error) {
+      navigate("/provider-auth")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [navigate]);
+  }, [navigate])
 
   const handleLogout = () => {
-    localStorage.removeItem('provider');
-    // toast({
-    //   title: "Logged Out",
-    //   description: "You have been successfully logged out.",
-    // });
-    navigate('/');
-  };
+    localStorage.removeItem("provider")
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out."
+    })
+    navigate("/")
+  }
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = status => {
     switch (status) {
-      case 'approved':
+      case "approved":
         return (
-          <Badge
-            color="success"
-            badgeContent={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <CheckCircleIcon fontSize="small" />
-                Approved
-              </Box>
-            }
-            sx={{ '& .MuiBadge-badge': { backgroundColor: '#d1fae5', color: '#065f46', fontWeight: 500 } }}
-          />
-        );
-      case 'pending':
+          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            Approved
+          </Badge>
+        )
+      case "pending":
         return (
-          <Badge
-            color="warning"
-            badgeContent={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <AccessTimeIcon fontSize="small" />
-                Pending Review
-              </Box>
-            }
-            sx={{ '& .MuiBadge-badge': { backgroundColor: '#fef3c7', color: '#92400e', fontWeight: 500 } }}
-          />
-        );
-      case 'rejected':
+          <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100">
+            <Clock className="h-3 w-3 mr-1" />
+            Pending Review
+          </Badge>
+        )
+      case "rejected":
         return (
-          <Badge
-            color="error"
-            badgeContent={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <CancelIcon fontSize="small" />
-                Rejected
-              </Box>
-            }
-            sx={{ '& .MuiBadge-badge': { backgroundColor: '#fee2e2', color: '#991b1b', fontWeight: 500 } }}
-          />
-        );
+          <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
+            <XCircle className="h-3 w-3 mr-1" />
+            Rejected
+          </Badge>
+        )
       default:
-        return <Badge badgeContent="Unknown" color="secondary" />;
+        return <Badge variant="secondary">Unknown</Badge>
     }
-  };
+  }
 
   if (isLoading) {
     return (
-      <Box sx={{
-        minHeight: '100vh',
-        bgcolor: 'linear-gradient(135deg, #EFF6FF 0%, #FFF 50%, #FFEFD5 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <Box sx={{ textAlign: 'center' }}>
-          <CircularProgress sx={{ mb: 2 }} />
-          <Typography color="text.secondary">Loading dashboard...</Typography>
-        </Box>
-      </Box>
-    );
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    )
   }
 
   if (!provider) {
-    return null;
+    return null
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'linear-gradient(135deg, #EFF6FF 0%, #FFF 50%, #FFEFD5 100%)' }}>
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
       {/* Header */}
-      <Box sx={{ bgcolor: 'rgba(255,255,255,0.95)', borderBottom: 1, borderColor: 'divider', backdropFilter: 'blur(4px)' }}>
-        <Box sx={{ maxWidth: 1200, mx: 'auto', px: 2, py: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box>
-            <Typography variant="h5" fontWeight="bold">Provider Dashboard</Typography>
-            <Typography color="text.secondary">Welcome back, {provider.name}!</Typography>
-          </Box>
-          <Button
-            variant="outlined"
-            startIcon={<LogoutIcon />}
-            onClick={handleLogout}
-            sx={{ fontWeight: 500 }}
-          >
-            Logout
-          </Button>
-        </Box>
-      </Box>
+      <div className="bg-card/95 backdrop-blur border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">
+                Provider Dashboard
+              </h1>
+              <p className="text-muted-foreground">
+                Welcome back, {provider.name}!
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* Main Content */}
-      <Box sx={{ maxWidth: 1200, mx: 'auto', px: 2, py: 4 }}>
+      <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Status Overview */}
-        <Box sx={{ mb: 4 }}>
+        <div className="mb-8">
           <Card>
-            <CardHeader
-              title={
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Box>
-                    <Typography variant="h6">Account Status</Typography>
-                    <Typography color="text.secondary" fontSize={14}>Current status of your provider account</Typography>
-                  </Box>
-                  {getStatusBadge(provider.status)}
-                </Box>
-              }
-            />
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-xl">Account Status</CardTitle>
+                  <CardDescription>
+                    Current status of your provider account
+                  </CardDescription>
+                </div>
+                {getStatusBadge(provider.status)}
+              </div>
+            </CardHeader>
             <CardContent>
-              {provider.status === 'pending' && (
-                <Box sx={{ bgcolor: '#fef3c7', border: '1px solid #fde68a', borderRadius: 2, p: 2 }}>
-                  <Typography color="#92400e">
-                    Your account is currently under review. We'll notify you once it's approved.
-                  </Typography>
-                </Box>
+              {provider.status === "pending" && (
+                <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                  <p className="text-yellow-800 dark:text-yellow-200">
+                    Your account is currently under review. We'll notify you
+                    once it's approved.
+                  </p>
+                </div>
               )}
-              {provider.status === 'approved' && (
-                <Box sx={{ bgcolor: '#d1fae5', border: '1px solid #6ee7b7', borderRadius: 2, p: 2 }}>
-                  <Typography color="#065f46">
+              {provider.status === "approved" && (
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <p className="text-green-800 dark:text-green-200">
                     Congratulations! Your account is approved and active.
-                  </Typography>
-                </Box>
+                  </p>
+                </div>
               )}
-              {provider.status === 'rejected' && (
-                <Box sx={{ bgcolor: '#fee2e2', border: '1px solid #fca5a5', borderRadius: 2, p: 2 }}>
-                  <Typography color="#991b1b">
-                    Your account was not approved. Please contact support for more information.
-                  </Typography>
-                </Box>
+              {provider.status === "rejected" && (
+                <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                  <p className="text-red-800 dark:text-red-200">
+                    Your account was not approved. Please contact support for
+                    more information.
+                  </p>
+                </div>
               )}
             </CardContent>
           </Card>
-        </Box>
+        </div>
 
         {/* Dashboard Tabs */}
-        <Tabs
-          value={tabIndex}
-          onChange={(_, newValue) => setTabIndex(newValue)}
-          variant="fullWidth"
-          sx={{ mb: 4 }}
-        >
-          {tabLabels.map((label, idx) => (
-            <Tab key={idx} label={label} />
-          ))}
+        <Tabs defaultValue="profile" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 max-w-md">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="bookings">Bookings</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
+
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Personal Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Personal Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{provider.name}</p>
+                      <p className="text-sm text-muted-foreground">Full Name</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{provider.email}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Email Address
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{provider.phone}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Phone Number
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">
+                        {new Date(provider.created_at).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Member Since
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Business Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5" />
+                    Business Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{provider.company_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Company Name
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Settings className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{provider.service_type}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Service Type
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{provider.location}</p>
+                      <p className="text-sm text-muted-foreground">Location</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">
+                        {provider.experience_years} years
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Experience
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Business Description */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Business Description</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed">
+                  {provider.description}
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Views
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">2,847</div>
+                  <p className="text-xs text-muted-foreground">
+                    +12% from last month
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Bookings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">142</div>
+                  <p className="text-xs text-muted-foreground">
+                    +8% from last month
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Rating</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">4.8</div>
+                  <p className="text-xs text-muted-foreground">
+                    Based on 89 reviews
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Bookings Tab */}
+          <TabsContent value="bookings">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Bookings</CardTitle>
+                <CardDescription>
+                  Your latest booking requests and appointments
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-lg font-medium text-muted-foreground">
+                    No bookings yet
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Once customers start booking your services, they'll appear
+                    here.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings">
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Settings</CardTitle>
+                <CardDescription>
+                  Manage your account preferences and settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Edit Profile Information
+                  </Button>
+
+                  <Button variant="outline" className="w-full justify-start">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Notification Preferences
+                  </Button>
+
+                  <Button variant="outline" className="w-full justify-start">
+                    <Building2 className="h-4 w-4 mr-2" />
+                    Business Settings
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
+      </div>
+    </div>
+  )
+}
 
-        {/* Profile Tab */}
-        {tabIndex === 0 && (
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 3 }}>
-            {/* Personal Information */}
-            <Card>
-              <CardHeader
-                title={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <PersonIcon fontSize="medium" />
-                    <Typography variant="h6">Personal Information</Typography>
-                  </Box>
-                }
-              />
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  <PersonIcon fontSize="small" color="disabled" />
-                  <Box>
-                    <Typography fontWeight={500}>{provider.name}</Typography>
-                    <Typography fontSize={13} color="text.secondary">Full Name</Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  <MailIcon fontSize="small" color="disabled" />
-                  <Box>
-                    <Typography fontWeight={500}>{provider.email}</Typography>
-                    <Typography fontSize={13} color="text.secondary">Email Address</Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  <PhoneIcon fontSize="small" color="disabled" />
-                  <Box>
-                    <Typography fontWeight={500}>{provider.phone}</Typography>
-                    <Typography fontSize={13} color="text.secondary">Phone Number</Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <CalendarTodayIcon fontSize="small" color="disabled" />
-                  <Box>
-                    <Typography fontWeight={500}>
-                      {new Date(provider.created_at).toLocaleDateString()}
-                    </Typography>
-                    <Typography fontSize={13} color="text.secondary">Member Since</Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-
-            {/* Business Information */}
-            <Card>
-              <CardHeader
-                title={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <BusinessIcon fontSize="medium" />
-                    <Typography variant="h6">Business Information</Typography>
-                  </Box>
-                }
-              />
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  <BusinessIcon fontSize="small" color="disabled" />
-                  <Box>
-                    <Typography fontWeight={500}>{provider.company_name}</Typography>
-                    <Typography fontSize={13} color="text.secondary">Company Name</Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  <SettingsIcon fontSize="small" color="disabled" />
-                  <Box>
-                    <Typography fontWeight={500}>{provider.service_type}</Typography>
-                    <Typography fontSize={13} color="text.secondary">Service Type</Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  <LocationOnIcon fontSize="small" color="disabled" />
-                  <Box>
-                    <Typography fontWeight={500}>{provider.location}</Typography>
-                    <Typography fontSize={13} color="text.secondary">Location</Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <BarChartIcon fontSize="small" color="disabled" />
-                  <Box>
-                    <Typography fontWeight={500}>{provider.experience_years} years</Typography>
-                    <Typography fontSize={13} color="text.secondary">Experience</Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Box>
-        )}
-
-        {/* Business Description */}
-        {tabIndex === 0 && (
-          <Card sx={{ mt: 3 }}>
-            <CardHeader title="Business Description" />
-            <CardContent>
-              <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                {provider.description}
-              </Typography>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Analytics Tab */}
-        {tabIndex === 1 && (
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
-            <Card>
-              <CardHeader title={<Typography fontSize={15}>Total Views</Typography>} />
-              <CardContent>
-                <Typography variant="h4" fontWeight="bold">2,847</Typography>
-                <Typography fontSize={13} color="text.secondary">+12% from last month</Typography>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader title={<Typography fontSize={15}>Bookings</Typography>} />
-              <CardContent>
-                <Typography variant="h4" fontWeight="bold">142</Typography>
-                <Typography fontSize={13} color="text.secondary">+8% from last month</Typography>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader title={<Typography fontSize={15}>Rating</Typography>} />
-              <CardContent>
-                <Typography variant="h4" fontWeight="bold">4.8</Typography>
-                <Typography fontSize={13} color="text.secondary">Based on 89 reviews</Typography>
-              </CardContent>
-            </Card>
-          </Box>
-        )}
-
-        {/* Bookings Tab */}
-        {tabIndex === 2 && (
-          <Card>
-            <CardHeader title="Recent Bookings" subheader="Your latest booking requests and appointments" />
-            <CardContent>
-              <Box sx={{ textAlign: 'center', py: 6 }}>
-                <GroupIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary">No bookings yet</Typography>
-                <Typography fontSize={13} color="text.secondary">
-                  Once customers start booking your services, they'll appear here.
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Settings Tab */}
-        {tabIndex === 3 && (
-          <Card>
-            <CardHeader title="Account Settings" subheader="Manage your account preferences and settings" />
-            <CardContent>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Button variant="outlined" fullWidth startIcon={<SettingsIcon />}>
-                  Edit Profile Information
-                </Button>
-                <Button variant="outlined" fullWidth startIcon={<MailIcon />}>
-                  Notification Preferences
-                </Button>
-                <Button variant="outlined" fullWidth startIcon={<BusinessIcon />}>
-                  Business Settings
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
-        )}
-      </Box>
-    </Box>
-  );
-};
-
-export default ProviderDashboard;
+export default ProviderDashboard

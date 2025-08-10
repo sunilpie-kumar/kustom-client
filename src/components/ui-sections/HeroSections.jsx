@@ -1,490 +1,247 @@
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Button, IconButton, Paper } from '@mui/material';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import Slider from 'react-slick';
-import { getFromServer } from '../../utils/axios';
-import ApiList from '../pages/general/api-list';
-
+import { Button } from "@/components/ui/button"
+import { ArrowDown } from "lucide-react"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem
+} from "@/components/ui/carousel"
+import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 const heroImages = [
   {
-    src: 'https://images.unsplash.com/photo-1721322800607-8c38375eef04?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Modern customized living room with contemporary furniture and elegant lighting design',
-    category: 'House Decor',
+    src:
+      "https://images.unsplash.com/photo-1721322800607-8c38375eef04?auto=format&fit=crop&w=1200&q=80",
+    alt:
+      "Modern customized living room with contemporary furniture and elegant lighting design",
+    category: "House Decor"
   },
   {
-    src: 'https://images.unsplash.com/photo-1489824904134-891ab64532f1?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Professional custom automobile modification and detailing services',
-    category: 'Automobile',
+    src:
+      "https://images.unsplash.com/photo-1489824904134-891ab64532f1?auto=format&fit=crop&w=1200&q=80",
+    alt: "Professional custom automobile modification and detailing services",
+    category: "Automobile"
   },
   {
-    src: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Handcrafted personalized gifts and custom engravings for special occasions',
-    category: 'Gifts',
+    src:
+      "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?auto=format&fit=crop&w=1200&q=80",
+    alt:
+      "Handcrafted personalized gifts and custom engravings for special occasions",
+    category: "Gifts"
   },
   {
-    src: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=1200&q=80',
+    src:
+      "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=1200&q=80",
     alt: "Custom fashion design and tailoring services for women's clothing",
-    category: 'Women Wear',
+    category: "Women Wear"
   },
   {
-    src: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Professional construction and architectural design services',
-    category: 'Construction',
+    src:
+      "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1200&q=80",
+    alt: "Professional construction and architectural design services",
+    category: "Construction"
   },
   {
-    src: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Technology consulting and digital transformation services',
-    category: 'More Services',
-  },
-];
+    src:
+      "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=1200&q=80",
+    alt: "Technology consulting and digital transformation services",
+    category: "More Services"
+  }
+]
 
 const HeroSection = () => {
-  const sliderRef = useRef();
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const navigate = useNavigate();
+  const [api, setApi] = useState()
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const navigate = useNavigate()
 
-  const settings = {
-    dots: true,
-    infinite: true,
-    speed: 700,
-    slidesToShow: 1,
-    slidesToScroll: 1,
-    autoplay: true,
-    autoplaySpeed: 5000,
-    arrows: false,
-    beforeChange: (_, next) => setCurrentSlide(next),
-    appendDots: dots => (
-      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 2 }}>
-        {dots}
-      </Box>
-    ),
-    customPaging: i => (
-      <IconButton
-        size="small"
-        sx={{
-          width: 12,
-          height: 12,
-          borderRadius: '50%',
-          bgcolor: currentSlide === i ? '#2563EB' : '#E5E7EB',
-          transform: currentSlide === i ? 'scale(1.25)' : 'scale(1)',
-          transition: 'all 0.3s',
-          '&:hover': { bgcolor: '#2563EB' },
-        }}
-        aria-label={`Go to slide ${i + 1}`}
-      />
-    ),
-  };
+  useEffect(() => {
+    if (!api) return
+
+    const autoSlide = setInterval(() => {
+      api.scrollNext()
+    }, 5000)
+
+    api.on("select", () => {
+      setCurrentSlide(api.selectedScrollSnap())
+    })
+
+    return () => clearInterval(autoSlide)
+  }, [api])
 
   const scrollToNext = () => {
-    const nextSection = document.getElementById('categories-section');
+    const nextSection = document.getElementById("categories-section")
     if (nextSection) {
-      nextSection.scrollIntoView({ behavior: 'smooth' });
+      nextSection.scrollIntoView({ behavior: "smooth" })
     }
-  };
-
-  useEffect(()=> {
-    getAllUsers()
-  }, []);
-
-  const getAllUsers = async () => {
-    try {
-      const response = await getFromServer(ApiList.API_URL_FOR_GET_PROVIDERS,{});
-      console.log('Fetched providers:', response)
-    } catch (error) {
-      console.error('Error fetching providers:', error);
-    }
-  };
+  }
 
   return (
-    <Box
-      sx={{
-        position: 'relative',
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        overflow: 'hidden',
-        background: 'linear-gradient(135deg, #EFF6FF 0%, #FFF7ED 100%)',
-        boxSizing: 'border-box',
-      }}
-      component="section"
-    >
+    <section className="relative bg-gradient-to-br from-blue-50 via-white to-orange-50 min-h-screen flex items-center overflow-hidden">
       {/* Background Pattern */}
-      <Box
-        sx={{
-          position: 'absolute',
-          inset: 0,
-          opacity: 0.05,
-          zIndex: 0,
-          background: 'radial-gradient(circle at 1px 1px, #6366F1 1px, transparent 0)',
-          backgroundSize: '24px 24px',
-          boxSizing: 'border-box',
-        }}
-      />
-      <Box sx={{ width: '100%', maxWidth: 1600, mx: 'auto', px: { xs: 2, md: 8 }, position: 'relative', zIndex: 1, boxSizing: 'border-box' }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 8, alignItems: 'center' }}>
-          {/* Left Side */}
-          <Box sx={{ flex: 1, py: { xs: 8, md: 12 } }}>
-            <Box
-              sx={{
-                mb: 3,
-                px: 2,
-                py: 1,
-                bgcolor: 'rgba(255,255,255,0.8)',
-                borderRadius: 8,
-                border: '1px solid #DBEAFE',
-                boxShadow: 1,
-                display: 'inline-flex',
-                boxSizing: 'border-box',
-              }}
-            >
-              <Typography variant="body2" sx={{ color: '#2563EB', fontWeight: 500 }}
-              fontFamily='font-body'>
-                ✨ India's #1 Customization Platform
-              </Typography>
-            </Box>
-            <Typography
-              variant="h1"
-              fontWeight="bold"
-              sx={{
-                fontSize: { xs: 40, md: 72 },
-                lineHeight: 1.1,
-                mb: 2,
-                background: 'linear-gradient(90deg, #2563EB 0%, #7C3AED 50%, #F59E42 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                display: 'inline-block',
-                fontFamily: 'font-heading',
-              }}
-            >
-              Kustom
-            </Typography>
-            <Typography variant="h4"
-              fontFamily="font-body"
-              fontWeight="bold" sx={{ color: '#1e293b', mb: 2 }}>
-              Kustomize your life
-            </Typography>
-            <Typography
-              variant="h6"
-              sx={{ color: '#64748B', mb: 4, maxWidth: 600, lineHeight: 1.5 }}
-            >
-              Connect with verified businesses across home decor, automobiles, gifts, fashion, and construction. Get personalized solutions through seamless virtual consultations.
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 4 }}>
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,_rgb(99,102,241)_1px,_transparent_0)] bg-[size:24px_24px]"></div>
+      </div>
+
+      <div className="container mx-auto px-6 lg:px-8 relative z-10">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-8 animate-fade-in">
+            <div className="space-y-6">
+              <div className="inline-flex items-center px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-blue-100 shadow-sm">
+                <span className="text-sm font-medium text-blue-600">
+                  ✨ India's #1 Customization Platform
+                </span>
+              </div>
+
+              <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 leading-tight">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500">
+                  Kustom
+                </span>
+              </h1>
+
+              <div className="space-y-3">
+                <h2 className="text-2xl lg:text-4xl font-bold text-gray-800 leading-tight">
+                  Kustomize your life
+                </h2>
+                <p className="text-xl text-gray-600 max-w-2xl leading-relaxed">
+                  Connect with verified businesses across home decor,
+                  automobiles, gifts, fashion, and construction. Get
+                  personalized solutions through seamless virtual consultations.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+
               <Button
-                size="large"
-                variant="contained"
-                onClick={() => navigate('/services')}
-                sx={{
-                  background: 'linear-gradient(90deg, #2563EB 0%, #2563EB 100%)',
-                  color: '#fff',
-                  px: 6,
-                  py: 2,
-                  fontWeight: 600,
-                  fontSize: 18,
-                  borderRadius: 3,
-                  boxShadow: 4,
-                  transition: 'all 0.3s',
-                  '&:hover': {
-                    background: 'linear-gradient(90deg, #1D4ED8 0%, #2563EB 100%)',
-                    boxShadow: 8,
-                    transform: 'scale(1.05)',
-                  },
-                  boxSizing: 'border-box',
-                }}
+                size="lg"
+                onClick={() => navigate("/services")}
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-transform duration-300 transform scale-100 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 aria-label="Browse and find services from verified providers"
               >
                 Find Services
               </Button>
+
               <Button
-                size="large"
-                variant="outlined"
-                onClick={() => navigate('/provider-auth')}
-                sx={{
-                  border: '2px solid #F59E42',
-                  color: '#F59E42',
-                  px: 6,
-                  py: 2,
-                  fontWeight: 600,
-                  fontSize: 18,
-                  borderRadius: 3,
-                  transition: 'all 0.3s',
-                  '&:hover': {
-                    bgcolor: '#FFF7ED',
-                    color: '#F59E42',
-                  },
-                  boxSizing: 'border-box',
-                }}
+                variant="outline"
+                size="lg"
+                onClick={() => navigate("/provider-auth")}
+                className="border-2 border-orange-500 text-orange-600 hover:bg-orange-50 hover:border-orange-600 px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                 aria-label="Register as a service provider and join our platform"
               >
                 Join as Provider
               </Button>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 4, pt: 4 }}>
-              <Paper
-                elevation={2}
-                sx={{
-                  textAlign: 'center',
-                  p: 2,
-                  bgcolor: 'rgba(255,255,255,0.6)',
-                  borderRadius: 3,
-                  minWidth: 120,
-                  boxSizing: 'border-box',
-                }}
-              >
-                <Typography variant="h4" fontWeight="bold" sx={{ color: '#2563EB', mb: 1 }}>
+            </div>
+
+            <div className="grid grid-cols-3 gap-8 pt-6">
+              <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-blue-100">
+                <div className="text-3xl font-bold text-blue-600 mb-1">
                   500+
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#64748B', fontWeight: 500 }}>
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
                   Verified Providers
-                </Typography>
-              </Paper>
-              <Paper
-                elevation={2}
-                sx={{
-                  textAlign: 'center',
-                  p: 2,
-                  bgcolor: 'rgba(255,255,255,0.6)',
-                  borderRadius: 3,
-                  minWidth: 120,
-                  boxSizing: 'border-box',
-                }}
-              >
-                <Typography variant="h4" fontWeight="bold" sx={{ color: '#F59E42', mb: 1 }}>
+                </div>
+              </div>
+              <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-orange-100">
+                <div className="text-3xl font-bold text-orange-500 mb-1">
                   10k+
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#64748B', fontWeight: 500 }}>
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
                   Happy Customers
-                </Typography>
-              </Paper>
-              <Paper
-                elevation={2}
-                sx={{
-                  textAlign: 'center',
-                  p: 2,
-                  bgcolor: 'rgba(255,255,255,0.6)',
-                  borderRadius: 3,
-                  minWidth: 120,
-                  boxSizing: 'border-box',
+                </div>
+              </div>
+              <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-green-100">
+                <div className="text-3xl font-bold text-green-600 mb-1">
+                  4.8★
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Average Rating
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative lg:h-[700px] animate-fade-in">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-200/50 to-orange-200/50 rounded-3xl transform rotate-2 blur-sm"></div>
+            <div className="absolute inset-2 bg-gradient-to-r from-purple-200/30 to-pink-200/30 rounded-3xl transform -rotate-1 blur-sm"></div>
+
+            <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-6 transform hover:scale-105 transition-transform duration-500 border border-white/50">
+              <Carousel
+                setApi={setApi}
+                className="w-full h-full"
+                opts={{
+                  align: "start",
+                  loop: true
                 }}
               >
-                <Typography variant="h4" fontWeight="bold" sx={{ color: '#22C55E', mb: 1 }}>
-                  4.8★
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#64748B', fontWeight: 500 }}>
-                  Average Rating
-                </Typography>
-              </Paper>
-            </Box>
-          </Box>
-          {/* Right Side */}
-          <Box sx={{ flex: 1, position: 'relative', minHeight: { xs: 300, lg: 400 }, maxWidth: '100%', boxSizing: 'border-box' }}>
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                borderRadius: 6,
-                background: 'linear-gradient(90deg, #DBEAFE 0%, #FDE68A 100%)',
-                opacity: 0.5,
-                zIndex: 0,
-                transform: 'rotate(2deg)',
-                filter: 'blur(8px)',
-                boxSizing: 'border-box',
-              }}
-            />
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 8,
-                borderRadius: 6,
-                background: 'linear-gradient(90deg, #E9D5FF 0%, #FECACA 100%)',
-                opacity: 0.3,
-                zIndex: 0,
-                transform: 'rotate(-1deg)',
-                filter: 'blur(8px)',
-                boxSizing: 'border-box',
-              }}
-            />
-            <Box
-              sx={{
-                position: 'relative',
-                bgcolor: 'rgba(255,255,255,0.9)',
-                borderRadius: 6,
-                boxShadow: 8,
-                p: 3,
-                zIndex: 1,
-                transition: 'transform 0.5s',
-                '&:hover': { transform: 'scale(1.05)' },
-                border: '1px solid rgba(255,255,255,0.5)',
-                overflow: 'hidden',
-                boxSizing: 'border-box',
-              }}
-            >
-              <Box sx={{ position: 'relative', width: '100%', paddingBottom: '56.25%', height: 0, overflow: 'hidden' }}>
-                <IconButton
-                  sx={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: -32,
-                    zIndex: 2,
-                    bgcolor: 'rgba(255,255,255,0.8)',
-                    boxShadow: 2,
-                    '&:hover': { bgcolor: '#fff' },
-                    transform: 'translateY(-50%)',
-                    boxSizing: 'border-box',
-                  }}
-                  onClick={() => sliderRef.current.slickPrev()}
-                  aria-label="Previous slide"
-                >
-                  <ArrowBackIosNewIcon sx={{ fontSize: 22, color: '#64748B' }} />
-                </IconButton>
-                <IconButton
-                  sx={{
-                    position: 'absolute',
-                    top: '50%',
-                    right: -32,
-                    zIndex: 2,
-                    bgcolor: 'rgba(255,255,255,0.8)',
-                    boxShadow: 2,
-                    '&:hover': { bgcolor: '#fff' },
-                    transform: 'translateY(-50%)',
-                    boxSizing: 'border-box',
-                  }}
-                  onClick={() => sliderRef.current.slickNext()}
-                  aria-label="Next slide"
-                >
-                  <ArrowForwardIosIcon sx={{ fontSize: 22, color: '#64748B' }} />
-                </IconButton>
-                <Slider ref={sliderRef} {...settings}>
+                <CarouselContent>
                   {heroImages.map((image, index) => (
-                    <Box key={index} sx={{ position: 'relative', borderRadius: 4, overflow: 'hidden', width: '100%', height: '100%' }}>
-                      <img
-                        src={image.src}
-                        alt={image.alt}
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          maxWidth: '100%',
-                          transition: 'transform 0.7s',
-                          WebkitTransition: 'transform 0.7s',
-                          MozTransition: 'transform 0.7s',
-                        }}
-                        loading={index === 0 ? 'eager' : 'lazy'}
-                      />
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          inset: 0,
-                          background: 'linear-gradient(to top, rgba(0,0,0,0.2) 0%, transparent 100%)',
-                          boxSizing: 'border-box',
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          bottom: 24,
-                          left: 24,
-                          right: 24,
-                          boxSizing: 'border-box',
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            bgcolor: 'rgba(255,255,255,0.95)',
-                            borderRadius: 2,
-                            p: 2,
-                            boxShadow: 4,
-                            boxSizing: 'border-box',
-                          }}
-                        >
-                          <Typography
-                            variant="h6"
-                            fontWeight="bold"
-                            sx={{ color: '#1e293b', mb: 1 }}
-                          >
-                            {image.category}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: '#64748B',
-                              display: '-webkit-box',
-                              WebkitBoxOrient: 'vertical',
-                              WebkitLineClamp: 2,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}
-                          >
-                            {image.alt}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Box>
+                    <CarouselItem key={index}>
+                      <div className="relative overflow-hidden rounded-2xl">
+                        <img
+                          src={image.src}
+                          alt={image.alt}
+                          className="w-full h-[500px] object-cover transition-transform duration-700 hover:scale-110"
+                          loading={index === 0 ? "eager" : "lazy"}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                        <div className="absolute bottom-6 left-6 right-6">
+                          <div className="bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg">
+                            <h3 className="font-semibold text-gray-800 mb-1">
+                              {image.category}
+                            </h3>
+                            <p className="text-sm text-gray-600 line-clamp-2">
+                              {image.alt}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CarouselItem>
                   ))}
-                </Slider>
-              </Box>
-            </Box>
-            {/* Virtual Consultation CTA */}
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: -32,
-                right: -32,
-                background: 'linear-gradient(90deg, #2563EB 0%, #7C3AED 100%)',
-                color: '#fff',
-                borderRadius: 4,
-                boxShadow: 8,
-                p: 3,
-                cursor: 'pointer',
-                transition: 'all 0.3s',
-                '&:hover': { boxShadow: 12, transform: 'scale(1.05)' },
-                boxSizing: 'border-box',
-              }}
-              onClick={() => navigate('/services')}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && navigate('/services')}
-              aria-label="Book virtual consultation instantly"
-            >
-              <Typography variant="body2" fontWeight="bold" sx={{ mb: 0.5 }}>
-                Virtual Consultation
-              </Typography>
-              <Typography variant="caption" sx={{ opacity: 0.9 }}>
-                Book instantly →
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-      </Box>
-      <IconButton
-        sx={{
-          position: 'absolute',
-          bottom: 64,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          bgcolor: 'rgba(255,255,255,0.8)',
-          backdropFilter: 'blur(4px)',
-          boxShadow: 4,
-          p: 2,
-          borderRadius: '50%',
-          transition: 'all 0.3s',
-          '&:hover': { bgcolor: '#fff' },
-          boxSizing: 'border-box',
-        }}
+                </CarouselContent>
+              </Carousel>
+
+              {/* Carousel Indicators */}
+              <div className="flex justify-center space-x-2 mt-4">
+                {heroImages.map((_, index) => (
+                  <button
+                    key={index}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${currentSlide === index
+                      ? "bg-blue-600 scale-125"
+                      : "bg-gray-300 hover:bg-gray-400"
+                      }`}
+                    onClick={() => api?.scrollTo(index)}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+
+              <div
+                className="absolute -bottom-6 -right-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl shadow-xl p-6 cursor-pointer hover:shadow-2xl transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                onClick={() => navigate("/services")}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => e.key === "Enter" && navigate("/services")}
+                aria-label="Book virtual consultation instantly"
+              >
+                <div className="text-sm font-semibold mb-1">
+                  Virtual Consultation
+                </div>
+                <div className="text-xs opacity-90">Book instantly →</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button
+        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-lg hover:bg-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         onClick={scrollToNext}
         aria-label="Scroll to categories section"
       >
-        <ArrowDownwardIcon sx={{ fontSize: 32, color: '#64748B' }} />
-      </IconButton>
-    </Box>
-  );
-};
+        <ArrowDown className="w-6 h-6 text-gray-600" />
+      </button>
+    </section>
+  )
+}
 
-export default HeroSection;
+export default HeroSection

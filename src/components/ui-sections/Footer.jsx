@@ -1,84 +1,111 @@
-import { Box, Typography, Link, Divider, Grid } from '@mui/material';
-
 const Footer = () => {
   return (
-    <Box component="footer" sx={{ bgcolor: '#111827', color: '#fff', py: 8 }}>
-      <Box sx={{ maxWidth: 1200, mx: 'auto', px: { xs: 2, md: 8 } }}>
-        <Grid container spacing={4} sx={{ mb: 8 }}>
-          <Grid item xs={12} md={3}>
-            <Box sx={{ mb: 2 }}>
-              <Typography
-                variant="h4"
-                fontWeight="bold"
-                sx={{
-                  background: 'linear-gradient(90deg, #60A5FA 0%, #F59E42 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  mb: 2,
-                }}
-              >
-                CustomConnect
-              </Typography>
-              <Typography color="grey.400" sx={{ lineHeight: 1.6 }}>
-                Connecting you with verified customization experts across all categories. Your vision, their expertise.
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>Categories</Typography>
-            <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0 }}>
-              {['House Decor', 'Automobile', 'Gifts', 'Women Wear', 'Construction'].map((cat) => (
-                <Box component="li" key={cat} sx={{ mb: 1 }}>
-                  <Link href="#" underline="none" color="grey.400" sx={{
-                    transition: 'color 0.2s',
-                    '&:hover': { color: '#fff' }
-                  }}>
-                    {cat}
-                  </Link>
-                </Box>
-              ))}
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>For Providers</Typography>
-            <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0 }}>
-              {['Join as Provider', 'Provider Dashboard', 'Success Stories', 'Resources'].map((item) => (
-                <Box component="li" key={item} sx={{ mb: 1 }}>
-                  <Link href="#" underline="none" color="grey.400" sx={{
-                    transition: 'color 0.2s',
-                    '&:hover': { color: '#fff' }
-                  }}>
-                    {item}
-                  </Link>
-                </Box>
-              ))}
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>Support</Typography>
-            <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0 }}>
-              {['Help Center', 'Contact Us', 'Privacy Policy', 'Terms of Service'].map((item) => (
-                <Box component="li" key={item} sx={{ mb: 1 }}>
-                  <Link href="#" underline="none" color="grey.400" sx={{
-                    transition: 'color 0.2s',
-                    '&:hover': { color: '#fff' }
-                  }}>
-                    {item}
-                  </Link>
-                </Box>
-              ))}
-            </Box>
-          </Grid>
-        </Grid>
-        <Divider sx={{ borderColor: '#1F2937', mb: 4 }} />
-        <Box sx={{ textAlign: 'center', color: 'grey.400', pt: 2 }}>
-          <Typography variant="body2">
-            &copy; 2024 CustomConnect. All rights reserved. Built with ❤️ for creators and seekers.
-          </Typography>
-        </Box>
-      </Box>
-    </Box>
-  );
-};
+    <footer className="bg-gray-900 text-white py-16">
+      <div className="container mx-auto px-6 lg:px-8">
+        <div className="grid md:grid-cols-4 gap-8 mb-12">
+          <div className="space-y-4">
+            <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-orange-400 bg-clip-text text-transparent">
+              CustomConnect
+            </h3>
+            <p className="text-gray-400 leading-relaxed">
+              Connecting you with verified customization experts across all
+              categories. Your vision, their expertise.
+            </p>
+          </div>
 
-export default Footer;
+          <div>
+            <h4 className="text-lg font-semibold mb-4">Categories</h4>
+            <ul className="space-y-2 text-gray-400">
+              <li>
+                <a href="#" className="hover:text-white transition-colors">
+                  House Decor
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-white transition-colors">
+                  Automobile
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-white transition-colors">
+                  Gifts
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-white transition-colors">
+                  Women Wear
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-white transition-colors">
+                  Construction
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-lg font-semibold mb-4">For Providers</h4>
+            <ul className="space-y-2 text-gray-400">
+              <li>
+                <a href="#" className="hover:text-white transition-colors">
+                  Join as Provider
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-white transition-colors">
+                  Provider Dashboard
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-white transition-colors">
+                  Success Stories
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-white transition-colors">
+                  Resources
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-lg font-semibold mb-4">Support</h4>
+            <ul className="space-y-2 text-gray-400">
+              <li>
+                <a href="#" className="hover:text-white transition-colors">
+                  Help Center
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-white transition-colors">
+                  Contact Us
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-white transition-colors">
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-white transition-colors">
+                  Terms of Service
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
+          <p>
+            &copy; 2024 CustomConnect. All rights reserved. Built with ❤️ for
+            creators and seekers.
+          </p>
+        </div>
+      </div>
+    </footer>
+  )
+}
+
+export default Footer

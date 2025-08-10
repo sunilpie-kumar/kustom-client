@@ -1,548 +1,649 @@
-import { useState } from 'react';
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select"
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
-  Typography,
-  Box,
-  Grid,
-  TextField,
-  Button,
-  MenuItem,
-  CircularProgress,
-  Divider,
-  Chip,
-  IconButton,
-} from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import StarIcon from '@mui/icons-material/Star';
-import ShieldIcon from '@mui/icons-material/Security';
-import ClockIcon from '@mui/icons-material/AccessTime';
-import AlertIcon from '@mui/icons-material/ErrorOutline';
-import ImageIcon from '@mui/icons-material/Image';
-import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
-// import { apiService } from '@/services/apiService';
-// import { useToast } from '@/hooks/use-toast';
+  CardTitle
+} from "@/components/ui/card"
+import {
+  Upload,
+  FileVideo,
+  Image,
+  CheckCircle,
+  AlertCircle,
+  Star,
+  Shield,
+  Clock
+} from "lucide-react"
+// import { apiService } from "@/services/apiService"
+import { useToast } from "@/hooks/use-toast"
 
 const categories = [
-  'House Decor',
-  'Automobile',
-  'Gifts',
-  'Women Wear',
-  'Construction',
-  'Technology',
-  'Other Services'
-];
+  "House Decor",
+  "Automobile",
+  "Gifts",
+  "Women Wear",
+  "Construction",
+  "Technology",
+  "Other Services"
+]
 
 const BusinessForm = () => {
-  // const { toast } = useToast();
+  const { toast } = useToast()
 
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    company_name: '',
-    service_type: '',
-    experience_years: '',
-    location: '',
-    description: '',
-    gst_number: ''
-  });
+    name: "",
+    email: "",
+    phone: "",
+    company_name: "",
+    service_type: "",
+    experience_years: "",
+    location: "",
+    description: "",
+    gst_number: ""
+  })
 
-  const [uploadedFiles, setUploadedFiles] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState('idle');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [uploadedFiles, setUploadedFiles] = useState([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState("idle")
+  const [errorMessage, setErrorMessage] = useState("")
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
 
-  const handleFileUpload = (event) => {
-    const files = Array.from(event.target.files || []);
+  const handleFileUpload = event => {
+    const files = Array.from(event.target.files || [])
     const validFiles = files.filter(file => {
-      const isValid = file.size <= 10 * 1024 * 1024; // 10MB limit
+      const isValid = file.size <= 10 * 1024 * 1024 // 10MB limit
       if (!isValid) {
-        // toast({
-        //   title: "File too large",
-        //   description: `${file.name} exceeds 10MB limit`,
-        //   variant: "destructive",
-        // });
+        toast({
+          title: "File too large",
+          description: `${file.name} exceeds 10MB limit`,
+          variant: "destructive"
+        })
       }
-      return isValid;
-    });
-    setUploadedFiles(prev => [...prev, ...validFiles]);
-  };
+      return isValid
+    })
+    setUploadedFiles(prev => [...prev, ...validFiles])
+  }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setSubmitStatus('idle');
-    setErrorMessage('');
+  const handleSubmit = async e => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setSubmitStatus("idle")
+    setErrorMessage("")
 
     try {
       // Validate required fields
-      const requiredFields = ['name', 'email', 'phone', 'company_name', 'service_type', 'experience_years', 'location'];
+      const requiredFields = [
+        "name",
+        "email",
+        "phone",
+        "company_name",
+        "service_type",
+        "experience_years",
+        "location"
+      ]
       for (const field of requiredFields) {
         if (!formData[field]) {
-          throw new Error(`${field.replace('_', ' ')} is required`);
+          throw new Error(`${field.replace("_", " ")} is required`)
         }
       }
 
       // Submit provider registration using new API service
-      // const response = await apiService.business.register(formData, uploadedFiles);
-      const response = await null;
+      // const response = await apiService.business.register(
+      //   formData,
+      //   uploadedFiles
+      // )
+
+      const response = null;
 
       if (response.success) {
-        setSubmitStatus('success');
-        // toast({
-        //   title: "Registration Successful!",
-        //   description: "Your provider application has been submitted and is under review. We'll contact you within 24-48 hours.",
-        //   duration: 5000,
-        // });
+        console.log("Provider registered successfully:", response)
+        setSubmitStatus("success")
+
+        // Show success toast
+        toast({
+          title: "Registration Successful!",
+          description:
+            "Your provider application has been submitted and is under review. We'll contact you within 24-48 hours.",
+          duration: 5000
+        })
+
+        // Reset form after delay
         setTimeout(() => {
           setFormData({
-            name: '',
-            email: '',
-            phone: '',
-            company_name: '',
-            service_type: '',
-            experience_years: '',
-            location: '',
-            description: '',
-            gst_number: ''
-          });
-          setUploadedFiles([]);
-        }, 2000);
+            name: "",
+            email: "",
+            phone: "",
+            company_name: "",
+            service_type: "",
+            experience_years: "",
+            location: "",
+            description: "",
+            gst_number: ""
+          })
+          setUploadedFiles([])
+        }, 2000)
       } else {
-        throw new Error(response.message || 'Registration failed');
+        throw new Error(response.message || "Registration failed")
       }
     } catch (error) {
-      setSubmitStatus('error');
+      console.error("Registration error:", error)
+      setSubmitStatus("error")
+
+      // Handle API error response
       if (error instanceof Error) {
         try {
-          const errorData = JSON.parse(error.message);
+          const errorData = JSON.parse(error.message)
           if (errorData.errors && Array.isArray(errorData.errors)) {
-            setErrorMessage(errorData.errors.map((err) => err.msg).join(', '));
+            setErrorMessage(errorData.errors.map(err => err.msg).join(", "))
           } else {
-            setErrorMessage(errorData.message || error.message);
+            setErrorMessage(errorData.message || error.message)
           }
         } catch {
-          setErrorMessage(error.message);
+          setErrorMessage(error.message)
         }
       } else {
-        setErrorMessage('Registration failed. Please try again.');
+        setErrorMessage("Registration failed. Please try again.")
       }
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
-  const removeFile = (index) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-  };
+  const removeFile = index => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index))
+  }
 
-  if (submitStatus === 'success') {
+  if (submitStatus === "success") {
     return (
-      <Card sx={{ width: '100%', maxWidth: 900, mx: 'auto', border: 0, boxShadow: 8, bgcolor: '#fff' }}>
-        <CardContent sx={{ py: 8 }}>
-          <Box sx={{ textAlign: 'center', gap: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <Box sx={{ position: 'relative', mb: 2 }}>
-              <Box sx={{
-                width: 96, height: 96,
-                background: 'linear-gradient(90deg, #22C55E 0%, #059669 100%)',
-                borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                mx: 'auto', boxShadow: 4
-              }}>
-                <CheckCircleIcon sx={{ fontSize: 48, color: '#fff' }} />
-              </Box>
-              <Box sx={{
-                position: 'absolute', top: -8, right: -8,
-                width: 32, height: 32, bgcolor: '#F59E42',
-                borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                <StarIcon sx={{ fontSize: 18, color: '#B45309' }} />
-              </Box>
-            </Box>
-            <Typography variant="h4" fontWeight="bold" sx={{
-              background: 'linear-gradient(90deg, #22C55E 0%, #059669 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              mb: 2
-            }}>
-              Registration Successful!
-            </Typography>
-            <Box sx={{ maxWidth: 400, mx: 'auto', mb: 2 }}>
-              <Typography variant="body1" color="text.primary" fontWeight="medium" sx={{ mb: 1 }}>
-                Welcome to the Kustom Provider Network!
-              </Typography>
-              <Typography color="text.secondary">
-                Thank you for registering as a provider. Your application is now under review. 
-                Our team will contact you within 24-48 hours with the next steps.
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, pt: 2, justifyContent: 'center', alignItems: 'center' }}>
-              <Chip icon={<ClockIcon />} label="Review time: 24-48 hours" sx={{ bgcolor: '#F3F4F6', color: '#555' }} />
-              <Chip icon={<ShieldIcon />} label="Verification in progress" sx={{ bgcolor: '#EFF6FF', color: '#2563EB' }} />
-            </Box>
+      <Card className="w-full max-w-4xl mx-auto border-0 shadow-2xl bg-white">
+        <CardContent className="pt-12 pb-12">
+          <div className="text-center space-y-6">
+            <div className="relative">
+              <div className="w-24 h-24 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-xl">
+                <CheckCircle className="h-12 w-12 text-white" />
+              </div>
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
+                <Star className="h-4 w-4 text-yellow-800" fill="currentColor" />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                Registration Successful!
+              </h2>
+              <div className="max-w-md mx-auto space-y-3">
+                <p className="text-lg text-gray-700 font-medium">
+                  Welcome to the Kustom Provider Network!
+                </p>
+                <p className="text-gray-600 leading-relaxed">
+                  Thank you for registering as a provider. Your application is
+                  now under review. Our team will contact you within 24-48 hours
+                  with the next steps.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6">
+              <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-full">
+                <Clock className="h-4 w-4" />
+                <span>Review time: 24-48 hours</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-4 py-2 rounded-full">
+                <Shield className="h-4 w-4" />
+                <span>Verification in progress</span>
+              </div>
+            </div>
+
             <Button
-              onClick={() => setSubmitStatus('idle')}
-              sx={{
-                mt: 4,
-                background: 'linear-gradient(90deg, #2563EB 0%, #7C3AED 100%)',
-                color: '#fff',
-                px: 6,
-                py: 2,
-                fontWeight: 600,
-                fontSize: 18,
-                borderRadius: 3,
-                boxShadow: 4,
-                transition: 'all 0.3s',
-                '&:hover': {
-                  background: 'linear-gradient(90deg, #1D4ED8 0%, #7C3AED 100%)',
-                  boxShadow: 8,
-                  transform: 'scale(1.05)',
-                },
-              }}
+              onClick={() => setSubmitStatus("idle")}
+              className="mt-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
             >
               Register Another Provider
             </Button>
-          </Box>
+          </div>
         </CardContent>
       </Card>
-    );
+    )
   }
 
   return (
-    <Card sx={{ width: '100%', maxWidth: 900, mx: 'auto', border: 0, boxShadow: 8, bgcolor: '#fff' }}>
-      <CardHeader
-        sx={{
-          background: 'linear-gradient(90deg, #EFF6FF 0%, #F3F4F6 100%)',
-          borderBottom: '1px solid #E5E7EB',
-          py: 6,
-          textAlign: 'center'
-        }}
-        title={
-          <Box>
-            <Box sx={{
-              width: 64, height: 64,
-              background: 'linear-gradient(90deg, #2563EB 0%, #7C3AED 100%)',
-              borderRadius: 3,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              mx: 'auto', boxShadow: 2, mb: 2
-            }}>
-              <ShieldIcon sx={{ fontSize: 32, color: '#fff' }} />
-            </Box>
-            <Typography variant="h4" fontWeight="bold" sx={{
-              background: 'linear-gradient(90deg, #1E293B 0%, #7C3AED 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              mb: 1
-            }}>
+    <Card className="w-full max-w-4xl mx-auto border-0 shadow-2xl bg-white">
+      <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-100 py-8">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+            <Shield className="h-8 w-8 text-white" />
+          </div>
+          <div>
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-900 to-purple-900 bg-clip-text text-transparent mb-2">
               Join Kustom Provider Network
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 600, mx: 'auto', mb: 2 }}>
-              Welcome! Fill out the details below to join our platform and start connecting with thousands of customers looking for your services.
-            </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2, pt: 2 }}>
-              <Chip icon={<StarIcon sx={{ color: '#F59E42' }} />} label="Verified Badge" sx={{ bgcolor: '#FFFDE7', color: '#555' }} />
-              <Chip icon={<ShieldIcon sx={{ color: '#22C55E' }} />} label="Trusted Platform" sx={{ bgcolor: '#E0F7FA', color: '#555' }} />
-              <Chip icon={<ClockIcon sx={{ color: '#7C3AED' }} />} label="Quick Setup" sx={{ bgcolor: '#F3E8FF', color: '#555' }} />
-            </Box>
-          </Box>
-        }
-      />
-      <CardContent sx={{ p: 6 }}>
-        {submitStatus === 'error' && (
-          <Box sx={{ mb: 6, p: 3, bgcolor: '#FFEBEE', border: '1px solid #FFCDD2', borderRadius: 2, display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-            <AlertIcon sx={{ fontSize: 32, color: '#F44336', mt: 0.5 }} />
-            <Box>
-              <Typography fontWeight="bold" color="#B71C1C" sx={{ mb: 1 }}>Registration Error</Typography>
-              <Typography color="#D32F2F">{errorMessage}</Typography>
-            </Box>
-          </Box>
+            </CardTitle>
+            <CardDescription className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              Welcome! Fill out the details below to join our platform and start
+              connecting with thousands of customers looking for your services.
+            </CardDescription>
+          </div>
+
+          {/* Benefits Preview */}
+          <div className="flex flex-wrap justify-center gap-4 pt-4">
+            <div className="flex items-center gap-2 bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full border border-blue-200 shadow-sm">
+              <Star className="h-4 w-4 text-yellow-500" fill="currentColor" />
+              <span className="text-sm font-medium text-gray-700">
+                Verified Badge
+              </span>
+            </div>
+            <div className="flex items-center gap-2 bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full border border-green-200 shadow-sm">
+              <Shield className="h-4 w-4 text-green-500" />
+              <span className="text-sm font-medium text-gray-700">
+                Trusted Platform
+              </span>
+            </div>
+            <div className="flex items-center gap-2 bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full border border-purple-200 shadow-sm">
+              <Clock className="h-4 w-4 text-purple-500" />
+              <span className="text-sm font-medium text-gray-700">
+                Quick Setup
+              </span>
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="p-8">
+        {submitStatus === "error" && (
+          <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-xl flex items-start space-x-3 shadow-sm">
+            <AlertCircle className="h-6 w-6 text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-semibold text-red-800 mb-1">
+                Registration Error
+              </h4>
+              <p className="text-red-700">{errorMessage}</p>
+            </div>
+          </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-8">
           {/* Personal Information Section */}
-          <Box sx={{ mb: 6 }}>
-            <Divider sx={{ mb: 3 }} />
-            <Typography variant="h6" fontWeight="bold" color="text.primary" sx={{ mb: 1 }}>
-              Personal Information
-            </Typography>
-            <Typography color="text.secondary" sx={{ mb: 3 }}>
-              Tell us about yourself and your contact details.
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Your Full Name"
+          <div className="space-y-6">
+            <div className="border-l-4 border-blue-500 pl-4">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                Personal Information
+              </h3>
+              <p className="text-gray-600">
+                Tell us about yourself and your contact details.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label
+                  htmlFor="name"
+                  className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                >
+                  Your Full Name
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="name"
                   value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  onChange={e => handleInputChange("name", e.target.value)}
                   placeholder="Enter your full name"
+                  className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
                   required
-                  fullWidth
-                  helperText="This will be displayed on your public profile"
+                  aria-describedby="name-description"
                 />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Email Address"
+                <p id="name-description" className="text-xs text-gray-500">
+                  This will be displayed on your public profile
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Label
+                  htmlFor="email"
+                  className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                >
+                  Email Address
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  onChange={e => handleInputChange("email", e.target.value)}
                   placeholder="Enter your email address"
+                  className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
                   required
-                  fullWidth
-                  helperText="We'll send important updates to this email"
+                  aria-describedby="email-description"
                 />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Phone Number"
+                <p id="email-description" className="text-xs text-gray-500">
+                  We'll send important updates to this email
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Label
+                  htmlFor="phone"
+                  className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                >
+                  Phone Number
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="phone"
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  onChange={e => handleInputChange("phone", e.target.value)}
                   placeholder="Enter your phone number"
+                  className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
                   required
-                  fullWidth
-                  helperText="Customers will use this to contact you"
+                  aria-describedby="phone-description"
                 />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Location/City"
+                <p id="phone-description" className="text-xs text-gray-500">
+                  Customers will use this to contact you
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Label
+                  htmlFor="location"
+                  className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                >
+                  Location/City
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="location"
                   value={formData.location}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
+                  onChange={e => handleInputChange("location", e.target.value)}
                   placeholder="Enter your city/location"
+                  className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
                   required
-                  fullWidth
-                  helperText="This helps customers find local services"
+                  aria-describedby="location-description"
                 />
-              </Grid>
-            </Grid>
-          </Box>
+                <p id="location-description" className="text-xs text-gray-500">
+                  This helps customers find local services
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Business Information Section */}
-          <Box sx={{ mb: 6 }}>
-            <Divider sx={{ mb: 3 }} />
-            <Typography variant="h6" fontWeight="bold" color="text.primary" sx={{ mb: 1 }}>
-              Business Information
-            </Typography>
-            <Typography color="text.secondary" sx={{ mb: 3 }}>
-              Details about your business and services.
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Company/Business Name"
-                  value={formData.company_name}
-                  onChange={(e) => handleInputChange('company_name', e.target.value)}
-                  placeholder="Enter your business name"
-                  required
-                  fullWidth
-                  helperText="This will be displayed on your public profile"
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  select
-                  label="Service Category"
-                  value={formData.service_type}
-                  onChange={(e) => handleInputChange('service_type', e.target.value)}
-                  required
-                  fullWidth
-                  helperText="Select your service category"
+          <div className="space-y-6">
+            <div className="border-l-4 border-purple-500 pl-4">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                Business Information
+              </h3>
+              <p className="text-gray-600">
+                Details about your business and services.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label
+                  htmlFor="company_name"
+                  className="text-sm font-semibold text-gray-700 flex items-center gap-2"
                 >
-                  {categories.map((category) => (
-                    <MenuItem key={category} value={category}>
-                      {category}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Years of Experience"
-                  type="number"
-                  inputProps={{ min: 0, max: 50 }}
-                  value={formData.experience_years}
-                  onChange={(e) => handleInputChange('experience_years', e.target.value)}
-                  placeholder="Enter years of experience"
+                  Company/Business Name
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="company_name"
+                  value={formData.company_name}
+                  onChange={e =>
+                    handleInputChange("company_name", e.target.value)
+                  }
+                  placeholder="Enter your business name"
+                  className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
                   required
-                  fullWidth
-                  helperText="This helps customers find the right provider"
+                  aria-describedby="company_name-description"
                 />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="GST Number (Optional)"
+                <p
+                  id="company_name-description"
+                  className="text-xs text-gray-500"
+                >
+                  This will be displayed on your public profile
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Label
+                  htmlFor="service_type"
+                  className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                >
+                  Service Category
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={formData.service_type}
+                  onValueChange={value =>
+                    handleInputChange("service_type", value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your service category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(category => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-3">
+                <Label
+                  htmlFor="experience_years"
+                  className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                >
+                  Years of Experience
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="experience_years"
+                  type="number"
+                  min="0"
+                  max="50"
+                  value={formData.experience_years}
+                  onChange={e =>
+                    handleInputChange("experience_years", e.target.value)
+                  }
+                  placeholder="Enter years of experience"
+                  className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
+                  required
+                  aria-describedby="experience_years-description"
+                />
+                <p
+                  id="experience_years-description"
+                  className="text-xs text-gray-500"
+                >
+                  This helps customers find the right provider
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Label
+                  htmlFor="gst_number"
+                  className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                >
+                  GST Number (Optional)
+                </Label>
+                <Input
+                  id="gst_number"
                   value={formData.gst_number}
-                  onChange={(e) => handleInputChange('gst_number', e.target.value)}
+                  onChange={e =>
+                    handleInputChange("gst_number", e.target.value)
+                  }
                   placeholder="Enter your GST number"
-                  fullWidth
+                  className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
                 />
-              </Grid>
-            </Grid>
-          </Box>
+              </div>
+            </div>
+          </div>
 
           {/* Business Description Section */}
-          <Box sx={{ mb: 6 }}>
-            <Divider sx={{ mb: 3 }} />
-            <Typography variant="h6" fontWeight="bold" color="text.primary" sx={{ mb: 1 }}>
-              Business Description
-            </Typography>
-            <Typography color="text.secondary" sx={{ mb: 3 }}>
-              Tell us about your business, services you provide, and what makes you unique.
-            </Typography>
-            <TextField
-              label="Business Description"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Tell us about your business, services you provide, and what makes you unique..."
-              multiline
-              rows={5}
-              required
-              fullWidth
-              helperText="Minimum 50 characters. This will be shown to potential customers."
-            />
-          </Box>
+          <div className="space-y-6">
+            <div className="border-l-4 border-green-500 pl-4">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                Business Description
+              </h3>
+              <p className="text-gray-600">
+                Tell us about your business, services you provide, and what
+                makes you unique.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <Label
+                htmlFor="description"
+                className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+              >
+                Business Description
+                <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={e => handleInputChange("description", e.target.value)}
+                placeholder="Tell us about your business, services you provide, and what makes you unique..."
+                rows={5}
+                className="border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl resize-none"
+                required
+                aria-describedby="description-description"
+              />
+              <p id="description-description" className="text-xs text-gray-500">
+                Minimum 50 characters. This will be shown to potential
+                customers.
+              </p>
+            </div>
+          </div>
 
           {/* File Upload Section */}
-          <Box sx={{ mb: 6 }}>
-            <Divider sx={{ mb: 3 }} />
-            <Typography variant="h6" fontWeight="bold" color="text.primary" sx={{ mb: 1 }}>
-              Portfolio & Media
-            </Typography>
-            <Typography color="text.secondary" sx={{ mb: 3 }}>
-              Showcase your work with images and videos (optional but recommended).
-            </Typography>
-            <Box sx={{
-              border: '2px dashed #E5E7EB',
-              borderRadius: 4,
-              p: 4,
-              textAlign: 'center',
-              bgcolor: '#F3F4F6',
-              mb: 3,
-            }}>
-              <UploadFileIcon sx={{ fontSize: 48, color: '#90A4AE', mb: 2 }} />
-              <Typography variant="body1" fontWeight="medium" color="text.primary" sx={{ mb: 1 }}>
-                Upload images or videos showcasing your work
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Drag and drop files here, or click to browse
-              </Typography>
-              <Typography variant="caption" color="text.disabled">
-                Supports: JPG, PNG, MP4, MOV (Max 10MB per file)
-              </Typography>
-              <input
+          <div className="space-y-6">
+            <div className="border-l-4 border-green-500 pl-4">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                Portfolio & Media
+              </h3>
+              <p className="text-gray-600">
+                Showcase your work with images and videos (optional but
+                recommended).
+              </p>
+            </div>
+
+            <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center bg-gray-50/50 hover:bg-gray-50 transition-colors duration-200">
+              <Upload className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+              <div className="space-y-2 mb-6">
+                <p className="text-lg font-medium text-gray-700">
+                  Upload images or videos showcasing your work
+                </p>
+                <p className="text-sm text-gray-500">
+                  Drag and drop files here, or click to browse
+                </p>
+                <p className="text-xs text-gray-400">
+                  Supports: JPG, PNG, MP4, MOV (Max 10MB per file)
+                </p>
+              </div>
+              <Input
                 type="file"
                 multiple
                 accept="image/*,video/*"
                 onChange={handleFileUpload}
-                style={{ display: 'none' }}
+                className="hidden"
                 id="file-upload"
               />
-              <label htmlFor="file-upload">
+              <Label htmlFor="file-upload" className="cursor-pointer">
                 <Button
-                  variant="outlined"
-                  component="span"
-                  sx={{
-                    px: 4,
-                    py: 1.5,
-                    mt: 2,
-                    borderRadius: 3,
-                    fontWeight: 600,
-                    bgcolor: '#fff',
-                    '&:hover': { bgcolor: '#E3F2FD', borderColor: '#90CAF9' },
-                  }}
+                  type="button"
+                  variant="outline"
+                  className="px-8 py-3 rounded-xl font-semibold hover:bg-blue-50 hover:border-blue-300"
                 >
                   Choose Files
                 </Button>
-              </label>
-            </Box>
-            {uploadedFiles.length > 0 && (
-              <Grid container spacing={2}>
-                {uploadedFiles.map((file, index) => (
-                  <Grid item xs={12} sm={6} md={4} key={index}>
-                    <Box sx={{
-                      position: 'relative',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: 2,
-                      p: 2,
-                      bgcolor: '#fff',
-                      boxShadow: 1,
-                      mb: 2,
-                    }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                        {file.type.startsWith('image/') ? (
-                          <ImageIcon sx={{ color: '#1976D2' }} />
-                        ) : (
-                          <VideoLibraryIcon sx={{ color: '#388E3C' }} />
-                        )}
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography variant="body2" fontWeight="medium" noWrap>{file.name}</Typography>
-                          <Typography variant="caption" color="text.secondary">{(file.size / 1024 / 1024).toFixed(2)} MB</Typography>
-                        </Box>
-                      </Box>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => removeFile(index)}
-                        sx={{
-                          width: '100%',
-                          fontSize: 12,
-                          bgcolor: '#FFEBEE',
-                          color: '#D32F2F',
-                          borderColor: '#FFCDD2',
-                          '&:hover': { bgcolor: '#FFCDD2', color: '#B71C1C' },
-                        }}
-                      >
-                        Remove
-                      </Button>
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            )}
-          </Box>
+              </Label>
+            </div>
 
-          <Box sx={{ pt: 4, borderTop: '1px solid #E5E7EB' }}>
+            {uploadedFiles.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {uploadedFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className="relative border border-gray-200 rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition-shadow duration-200"
+                  >
+                    <div className="flex items-center space-x-3 mb-3">
+                      {file.type.startsWith("image/") ? (
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <Image className="h-5 w-5 text-blue-600" />
+                        </div>
+                      ) : (
+                        <div className="p-2 bg-green-100 rounded-lg">
+                          <FileVideo className="h-5 w-5 text-green-600" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {file.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeFile(index)}
+                      className="w-full h-8 text-xs hover:bg-red-50 hover:border-red-200 hover:text-red-600"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="pt-6 border-t border-gray-200">
             <Button
               type="submit"
               disabled={isSubmitting}
-              fullWidth
-              sx={{
-                background: 'linear-gradient(90deg, #2563EB 0%, #7C3AED 100%)',
-                color: '#fff',
-                fontSize: 18,
-                py: 2,
-                borderRadius: 3,
-                fontWeight: 600,
-                boxShadow: 4,
-                transition: 'all 0.3s',
-                '&:hover': {
-                  background: 'linear-gradient(90deg, #1D4ED8 0%, #7C3AED 100%)',
-                  boxShadow: 8,
-                  transform: 'scale(1.03)',
-                },
-                opacity: isSubmitting ? 0.7 : 1,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
-              }}
-              startIcon={isSubmitting ? <CircularProgress size={24} color="inherit" /> : null}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-lg py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Registering...' : 'Register as Provider'}
+              {isSubmitting ? (
+                <div className="flex items-center justify-center gap-3">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Registering...</span>
+                </div>
+              ) : (
+                "Register as Provider"
+              )}
             </Button>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 2 }}>
-              By registering, you agree to our Terms of Service and Privacy Policy
-            </Typography>
-          </Box>
+
+            <p className="text-xs text-gray-500 text-center mt-4">
+              By registering, you agree to our Terms of Service and Privacy
+              Policy
+            </p>
+          </div>
         </form>
       </CardContent>
     </Card>
-  );
-};
+  )
+}
 
-export default BusinessForm;
+export default BusinessForm

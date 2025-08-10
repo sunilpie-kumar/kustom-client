@@ -1,102 +1,50 @@
-import { Button, Box, Typography } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Button } from "@/components/ui/button"
+import { useNavigate } from "react-router-dom"
 
 const CTASection = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   return (
-    <Box
-      sx={{
-        py: { xs: 10, md: 20 },
-        background: 'linear-gradient(90deg, #2563EB 0%, #F59E42 100%)',
-        textAlign: 'center',
-      }}
-      component="section"
-    >
-      <Box sx={{ maxWidth: 800, mx: 'auto', px: { xs: 2, md: 8 } }}>
-        <Typography
-          variant="h2"
-          fontWeight="bold"
-          color="#fff"
-          sx={{
-            mb: 3,
-            fontSize: { xs: 32, md: 48 },
-            lineHeight: 1.2,
-          }}
-        >
-          Ready to Start Your
-          <br />
-          Custom Project?
-        </Typography>
+    <section className="py-20 bg-gradient-to-r from-blue-600 to-orange-500">
+      <div className="container mx-auto px-6 lg:px-8 text-center">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <h2 className="text-4xl lg:text-6xl font-bold text-white leading-tight">
+            Ready to Start Your
+            <br />
+            Custom Project?
+          </h2>
 
-        <Typography
-          variant="h6"
-          color="rgba(255,255,255,0.9)"
-          sx={{
-            mb: 4,
-            maxWidth: 600,
-            mx: 'auto',
-            lineHeight: 1.5,
-            fontSize: { xs: 18, md: 22 },
-          }}
-        >
-          Join our community today and connect with verified professionals who will bring your vision to life.
-        </Typography>
+          <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
+            Join our community today and connect with verified professionals who
+            will bring your vision to life.
+          </p>
 
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, justifyContent: 'center', pt: 2 }}>
-          <Button
-            size="large"
-            variant="contained"
-            sx={{
-              bgcolor: '#fff',
-              color: '#2563EB',
-              px: 6,
-              py: 2,
-              fontWeight: 600,
-              fontSize: 18,
-              borderRadius: 3,
-              boxShadow: 4,
-              transition: 'all 0.3s',
-              '&:hover': {
-                bgcolor: '#F3F4F6',
-                boxShadow: 8,
-                transform: 'scale(1.05)',
-              },
-            }}
-          >
-            Get Started Now
-          </Button>
-          <Button
-            size="large"
-            variant="outlined"
-            onClick={() => navigate('/b2b')}
-            sx={{
-              border: '2px solid #fff',
-              color: '#fff',
-              px: 6,
-              py: 2,
-              fontWeight: 600,
-              fontSize: 18,
-              borderRadius: 3,
-              transition: 'all 0.3s',
-              '&:hover': {
-                bgcolor: '#fff',
-                color: '#2563EB',
-              },
-            }}
-          >
-            Join as Provider
-          </Button>
-        </Box>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            <Button
+              size="lg"
+              className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            >
+              Get Started Now
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => navigate("/b2b")}
+              className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300"
+            >
+              Join as Provider
+            </Button>
+          </div>
 
-        <Box sx={{ pt: 6, color: 'rgba(255,255,255,0.8)' }}>
-          <Typography variant="body2" fontSize={14}>
-            🔒 Secure • ✓ Verified Providers • 💬 24/7 Support
-          </Typography>
-        </Box>
-      </Box>
-    </Box>
-  );
-};
+          <div className="pt-8 text-white/80">
+            <p className="text-sm">
+              🔒 Secure • ✓ Verified Providers • 💬 24/7 Support
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
 
-export default CTASection;
+export default CTASection

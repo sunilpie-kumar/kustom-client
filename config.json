@@ -3,5 +3,6 @@
   "MODE": "LOCALHOST",
   "LOCALHOST_URL": "http://192.168.141.112:3001",
   "DEV_URL": "https://dev.elit.ai",
-  "UAT_URL": "https://uat.elit.ai"
+  "UAT_URL": "https://uat.elit.ai",
+  "PROD_URL": "https://kustomconnect.ai"
 }

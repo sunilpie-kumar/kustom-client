@@ -1,33 +1,21 @@
 /* eslint-disable no-unused-vars */
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
-  Box,
-  Button,
-  TextField,
   Select,
-  MenuItem,
-  InputAdornment,
-  Typography,
-  Card,
-  CardContent,
-  CardHeader,
-  Avatar,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-} from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import SearchIcon from '@mui/icons-material/Search';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import PersonIcon from '@mui/icons-material/Person';
-import LogoutIcon from '@mui/icons-material/Logout';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-// import { useToast } from '@/hooks/use-toast';
-import ServiceCard from "../ui-sections/ServiceCard";
-import AuthModal from '../auth/AuthModal';
-import ChatModal from '../ui-sections/ChatModal';
-import BookingModal from '../ui-sections/BookingModal';
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select"
+import ServiceCard from "../ui-sections/ServiceCard"
+import AuthModal from "../auth/AuthModal"
+import ChatModal from "../ui-sections/ChatModal"
+import BookingModal from "../ui-sections/BookingModal"
+import { ArrowLeft, Search, Filter, User, LogOut } from "lucide-react"
+import { useNavigate, useSearchParams } from "react-router-dom"
+import { useToast } from "@/hooks/use-toast"
 
 const mockProviders = [
   {
@@ -78,7 +66,7 @@ const mockProviders = [
     reviewCount: 203,
     location: 'Ahmedabad, Gujarat',
     image: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=400&q=80',
-    description: 'Custom tailored women\'s clothing and fashion consulting for the modern woman.',
+    description: "Custom tailored women's clothing and fashion consulting for the modern woman.",
     price: '₹3,000+',
     verified: true
   },
@@ -163,7 +151,7 @@ const categories = ['All', 'House Interior', 'Automotive', 'Gifts Customisation'
 
 const Services = () => {
   const navigate = useNavigate();
-  // const { toast } = useToast();
+  const { toast } = useToast();
   const [searchParams] = useSearchParams();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -216,7 +204,7 @@ const Services = () => {
 
     if (category !== 'All') {
       // Convert display name back to category key for filtering
-      const categoryKey = Object.entries(categoryMap).find(([value]) => value === category)?.[0];
+      const categoryKey = Object.entries(categoryMap).find(([key, value]) => value === category)?.[0];
       if (categoryKey) {
         filtered = filtered.filter(provider => provider.category === categoryKey);
       }
@@ -260,10 +248,10 @@ const Services = () => {
     localStorage.removeItem('user');
     setIsAuthenticated(false);
     setUser(null);
-    // toast({
-    //   title: "Signed out",
-    //   description: "You've been signed out successfully.",
-    // });
+    toast({
+      title: "Signed out",
+      description: "You've been signed out successfully.",
+    });
   };
 
   const handleAuthenticated = () => {
@@ -283,10 +271,10 @@ const Services = () => {
       setPendingAction(null);
     }
 
-    // toast({
-    //   title: "Welcome!",
-    //   description: "You're now signed in and can access all features.",
-    // });
+    toast({
+      title: "Welcome!",
+      description: "You're now signed in and can access all features.",
+    });
   };
 
   const handleBack = () => {
@@ -294,87 +282,86 @@ const Services = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#F3F4F6' }}>
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <Box sx={{ bgcolor: '#fff', boxShadow: 1, borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-        <Box sx={{ maxWidth: 1200, mx: 'auto', px: { xs: 2, md: 6 }, py: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 3 }}>
+      <div className="bg-white shadow-sm">
+        <div className="container mx-auto px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between gap-4 mb-4">
             <Button
-              variant="text"
-              startIcon={<ArrowBackIcon />}
+              variant="ghost"
+              size="sm"
               onClick={handleBack}
-              sx={{ fontWeight: 500 }}
+              className="flex items-center gap-2"
             >
+              <ArrowLeft className="w-4 h-4" />
               Back
             </Button>
+
             {isAuthenticated ? (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <PersonIcon sx={{ color: 'primary.main' }} />
-                <Typography variant="body2">Welcome, {user?.name || user?.email}</Typography>
-                <Button variant="outlined" startIcon={<LogoutIcon />} onClick={handleLogout}>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  <span className="text-sm">Welcome, {user?.name || user?.email}</span>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-2" />
                   Logout
                 </Button>
-              </Box>
+              </div>
             ) : (
-              <Button variant="contained" onClick={() => setShowAuthModal(true)}>
+              <Button onClick={() => setShowAuthModal(true)}>
                 Sign In
               </Button>
             )}
-          </Box>
-          <Typography variant="h4" fontWeight="bold" color="text.primary" sx={{ mb: 1 }}>
-            Available Services
-          </Typography>
-          <Typography color="text.secondary">
-            Connect with verified professionals across various categories
-          </Typography>
-        </Box>
-      </Box>
+          </div>
+
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Available Services</h1>
+            <p className="text-gray-600">Connect with verified professionals across various categories</p>
+          </div>
+        </div>
+      </div>
 
       {/* Filters */}
-      <Box sx={{ maxWidth: 1200, mx: 'auto', px: { xs: 2, md: 6 }, py: 3 }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, mb: 4 }}>
-          <TextField
-            placeholder="Search services, businesses, or categories..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-            fullWidth
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: 'grey.500' }} />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <FilterListIcon sx={{ color: 'grey.600' }} />
-            <Select
-              value={selectedCategory}
-              onChange={(e) => handleCategoryFilter(e.target.value)}
-              displayEmpty
-              sx={{ minWidth: 180 }}
-            >
-              {categories.map((category) => (
-                <MenuItem key={category} value={category}>
-                  {category}
-                </MenuItem>
-              ))}
+      <div className="container mx-auto px-6 lg:px-8 py-6">
+        <div className="flex flex-col md:flex-row gap-4 mb-8">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Input
+              placeholder="Search services, businesses, or categories..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10 py-3"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Filter className="w-5 h-5 text-gray-500" />
+            <Select value={selectedCategory} onValueChange={handleCategoryFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
-          </Box>
-        </Box>
+          </div>
+        </div>
 
         {/* Results count */}
-        <Typography color="text.secondary" sx={{ mb: 3 }}>
-          Showing {filteredProviders.length} service{filteredProviders.length !== 1 ? 's' : ''}
-          {selectedCategory !== 'All' && ` in ${selectedCategory}`}
-        </Typography>
+        <div className="mb-6">
+          <p className="text-gray-600">
+            Showing {filteredProviders.length} service{filteredProviders.length !== 1 ? 's' : ''}
+            {selectedCategory !== 'All' && ` in ${selectedCategory}`}
+          </p>
+        </div>
 
         {/* Service providers grid */}
-        <Box sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr', lg: '1fr 1fr 1fr 1fr' },
-          gap: 3,
-        }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProviders.map((provider) => (
             <ServiceCard
               key={provider.id}
@@ -383,15 +370,15 @@ const Services = () => {
               onCallClick={handleCallClick}
             />
           ))}
-        </Box>
+        </div>
 
         {filteredProviders.length === 0 && (
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <Typography color="grey.500" variant="h6" sx={{ mb: 2 }}>No services found</Typography>
-            <Typography color="text.secondary">Try adjusting your search or filter criteria</Typography>
-          </Box>
+          <div className="text-center py-12">
+            <div className="text-gray-400 text-lg mb-2">No services found</div>
+            <p className="text-gray-600">Try adjusting your search or filter criteria</p>
+          </div>
         )}
-      </Box>
+      </div>
 
       {/* Modals */}
       <AuthModal
@@ -415,7 +402,7 @@ const Services = () => {
         onClose={() => setShowBookingModal(false)}
         provider={selectedProvider}
       />
-    </Box>
+    </div>
   );
 };
 

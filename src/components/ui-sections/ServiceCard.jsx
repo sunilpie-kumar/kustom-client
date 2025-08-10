@@ -1,132 +1,80 @@
-import {
-  Card,
-  CardContent,
-  Button,
-  Box,
-  Typography,
-  Chip,
-  Avatar,
-} from '@mui/material';
-import StarIcon from '@mui/icons-material/Star';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import MessageIcon from '@mui/icons-material/Message';
-import PhoneIcon from '@mui/icons-material/Phone';
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Star, MapPin, MessageCircle, Phone } from "lucide-react"
 
 const ServiceCard = ({ provider, onChatClick, onCallClick }) => {
   return (
-    <Card
-      sx={{
-        transition: 'all 0.3s',
-        boxShadow: 2,
-        '&:hover': {
-          boxShadow: 8,
-          transform: 'translateY(-8px)',
-        },
-        overflow: 'hidden',
-      }}
-    >
-      <Box sx={{ position: 'relative' }}>
+    <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden">
+      <div className="relative">
         <img
           src={provider.image}
           alt={provider.businessName}
-          style={{
-            width: '100%',
-            height: 192,
-            objectFit: 'cover',
-            transition: 'transform 0.3s',
-          }}
+          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
         />
         {provider.verified && (
-          <Chip
-            label="✓ Verified"
-            color="success"
-            size="small"
-            sx={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              fontWeight: 600,
-              zIndex: 2,
-            }}
-          />
+          <div className="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+            ✓ Verified
+          </div>
         )}
-        <Chip
-          label={provider.category}
-          color="primary"
-          size="small"
-          sx={{
-            position: 'absolute',
-            top: 12,
-            left: 12,
-            fontWeight: 600,
-            bgcolor: 'primary.main',
-            color: '#fff',
-            zIndex: 2,
-          }}
-        />
-      </Box>
+        <div className="absolute top-3 left-3 bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+          {provider.category}
+        </div>
+      </div>
 
-      <CardContent sx={{ p: 2 }}>
-        <Box>
-          <Typography variant="h6" fontWeight="bold" color="text.primary">
+      <CardContent className="p-4 space-y-3">
+        <div>
+          <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">
             {provider.businessName}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            by {provider.name}
-          </Typography>
-        </Box>
+          </h3>
+          <p className="text-sm text-gray-600">by {provider.name}</p>
+        </div>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-          <StarIcon sx={{ color: '#F59E42', fontSize: 18 }} />
-          <Typography variant="body2" fontWeight="bold">
-            {provider.rating}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+            <span className="font-semibold text-sm">{provider.rating}</span>
+          </div>
+          <span className="text-sm text-gray-500">
             ({provider.reviewCount} reviews)
-          </Typography>
-        </Box>
+          </span>
+        </div>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, color: 'text.secondary' }}>
-          <LocationOnIcon sx={{ fontSize: 18 }} />
-          <Typography variant="body2">{provider.location}</Typography>
-        </Box>
+        <div className="flex items-center gap-1 text-gray-600">
+          <MapPin className="w-4 h-4" />
+          <span className="text-sm">{provider.location}</span>
+        </div>
 
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
+        <p className="text-sm text-gray-700 line-clamp-2">
           {provider.description}
-        </Typography>
+        </p>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pt: 1 }}>
-          <Typography variant="h6" fontWeight="bold" color="primary">
+        <div className="flex items-center justify-between pt-2">
+          <span className="text-lg font-bold text-blue-600">
             {provider.price}
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          </span>
+          <div className="flex gap-2">
             <Button
-              size="small"
-              variant="outlined"
-              startIcon={<PhoneIcon fontSize="small" />}
+              size="sm"
+              variant="outline"
+              className="flex items-center gap-1"
               onClick={() => onCallClick(provider)}
             >
+              <Phone className="w-4 h-4" />
               Call
             </Button>
             <Button
-              size="small"
-              variant="contained"
-              color="warning"
-              startIcon={<MessageIcon fontSize="small" />}
+              size="sm"
+              className="flex items-center gap-1 bg-orange-500 hover:bg-orange-600"
               onClick={() => onChatClick(provider)}
-              sx={{
-                bgcolor: '#F59E42',
-                color: '#fff',
-                '&:hover': { bgcolor: '#F59E42' },
-              }}
             >
+              <MessageCircle className="w-4 h-4" />
               Chat
             </Button>
-          </Box>
-        </Box>
+          </div>
+        </div>
       </CardContent>
     </Card>
-  );
-};
+  )
+}
 
-export default ServiceCard;
+export default ServiceCard
