@@ -1,8 +1,16 @@
 export const RouteList = {
   B_TO_B:"/b2b",
   SERVICES: "/services",
+  SERVICE_DETAILS: "/services/:id",
   DASHBOARD: "/dashboard",
   PROVIDER_AUTH: "/provider-auth",
   PROVIDER_SIGN_UP: "/provider-signup",
   PROVIDER_DASHBOARD: "/provider-dashboard",
+  AUTH: "/auth",
+  SIGNUP: "/signup",
+  USER_PROFILE: "/profile",
+  PROVIDER_PROFILE: "/provider-profile",
+  BOOKINGS: "/bookings",
+  USER_BOOKINGS: "/user-bookings",
+  PROVIDER_BOOKINGS: "/provider-bookings",
 }

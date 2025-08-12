@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
+import { RouteList } from "../pages/general/paths"
 
 const CTASection = () => {
   const navigate = useNavigate()
@@ -29,7 +30,7 @@ const CTASection = () => {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => navigate("/b2b")}
+              onClick={() => navigate(RouteList.AUTH, { state: { type: "b2b" } })}
               className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300"
             >
               Join as Provider

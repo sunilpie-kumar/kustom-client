@@ -2,9 +2,8 @@ import axios from 'axios';
 // import configFile from 'src/config.json';
 import configFile from "../../config.json"
 
-const apiURL = configFile.MODE === "LOCALHOST"
-  ? `${configFile[`${configFile.MODE}_URL`]}/api`
-  : `${configFile[`${configFile.MODE}_URL`]}/api/`;
+const base = configFile[`${configFile.MODE}_URL`].replace(/\/$/, '');
+const apiURL = `${base}/api/`; // always ensure trailing slash
 
 const axiosInstance = axios.create({
   baseURL: apiURL,

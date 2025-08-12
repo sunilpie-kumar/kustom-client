@@ -27,21 +27,23 @@ import {
   Shield,
   Clock
 } from "lucide-react"
-// import { apiService } from "@/services/apiService"
 import { useToast } from "@/hooks/use-toast"
+import { postToServer } from "@/utils/axios"
+import ApiList from "@/components/pages/general/api-list"
+import { useNavigate } from "react-router-dom"
+import { RouteList } from "@/components/pages/general/paths"
 
 const categories = [
-  "House Decor",
-  "Automobile",
-  "Gifts",
-  "Women Wear",
-  "Construction",
   "Technology",
-  "Other Services"
+  "Healthcare",
+  "Finance",
+  "Education",
+  "Other"
 ]
 
 const BusinessForm = () => {
   const { toast } = useToast()
+  const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
     name: "",
@@ -66,17 +68,10 @@ const BusinessForm = () => {
 
   const handleFileUpload = event => {
     const files = Array.from(event.target.files || [])
-    const validFiles = files.filter(file => {
-      const isValid = file.size <= 10 * 1024 * 1024 // 10MB limit
-      if (!isValid) {
-        toast({
-          title: "File too large",
-          description: `${file.name} exceeds 10MB limit`,
-          variant: "destructive"
-        })
-      }
-      return isValid
-    })
+    const validFiles = files.filter(file => file.size <= 10 * 1024 * 1024)
+    if (validFiles.length !== files.length) {
+      toast({ title: "File too large", description: "Each file must be <= 10MB", variant: "destructive" })
+    }
     setUploadedFiles(prev => [...prev, ...validFiles])
   }
 
@@ -87,87 +82,40 @@ const BusinessForm = () => {
     setErrorMessage("")
 
     try {
-      // Validate required fields
-      const requiredFields = [
-        "name",
-        "email",
-        "phone",
-        "company_name",
-        "service_type",
-        "experience_years",
-        "location"
-      ]
-      for (const field of requiredFields) {
-        if (!formData[field]) {
-          throw new Error(`${field.replace("_", " ")} is required`)
-        }
+      const required = ["name","email","phone","company_name","service_type","location"]
+      for (const f of required) if (!formData[f]) throw new Error(`${f.replace('_',' ')} is required`)
+
+      const payload = {
+        fullName: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        companyName: formData.company_name,
+        category: formData.service_type || 'Other',
+        licenseNumber: (formData.company_name || 'COMP').toUpperCase().replace(/\s+/g,'-') + '-' + Date.now().toString().slice(-5),
       }
 
-      // Submit provider registration using new API service
-      // const response = await apiService.business.register(
-      //   formData,
-      //   uploadedFiles
-      // )
+      const response = await postToServer(ApiList.API_URL_FOR_PROVIDER_SIGNUP, payload)
 
-      const response = null;
-
-      if (response.success) {
-        console.log("Provider registered successfully:", response)
+      if (response?.success) {
         setSubmitStatus("success")
-
-        // Show success toast
-        toast({
-          title: "Registration Successful!",
-          description:
-            "Your provider application has been submitted and is under review. We'll contact you within 24-48 hours.",
-          duration: 5000
-        })
-
-        // Reset form after delay
-        setTimeout(() => {
-          setFormData({
-            name: "",
-            email: "",
-            phone: "",
-            company_name: "",
-            service_type: "",
-            experience_years: "",
-            location: "",
-            description: "",
-            gst_number: ""
-          })
-          setUploadedFiles([])
-        }, 2000)
+        toast({ title: "Registration Successful!", description: "Redirecting to provider dashboard..." })
+        if (response.token) localStorage.setItem('token', response.token)
+        if (response.provider) localStorage.setItem('provider', JSON.stringify(response.provider))
+        localStorage.setItem('isAuthenticated', 'true')
+        navigate(RouteList.PROVIDER_DASHBOARD)
       } else {
-        throw new Error(response.message || "Registration failed")
+        throw new Error(response?.message || "Registration failed")
       }
     } catch (error) {
       console.error("Registration error:", error)
       setSubmitStatus("error")
-
-      // Handle API error response
-      if (error instanceof Error) {
-        try {
-          const errorData = JSON.parse(error.message)
-          if (errorData.errors && Array.isArray(errorData.errors)) {
-            setErrorMessage(errorData.errors.map(err => err.msg).join(", "))
-          } else {
-            setErrorMessage(errorData.message || error.message)
-          }
-        } catch {
-          setErrorMessage(error.message)
-        }
-      } else {
-        setErrorMessage("Registration failed. Please try again.")
-      }
+      setErrorMessage(error?.message || "Registration failed. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const removeFile = index => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index))
-  }
+  const removeFile = index => setUploadedFiles(prev => prev.filter((_, i) => i !== index))
 
   if (submitStatus === "success") {
     return (
@@ -178,44 +126,15 @@ const BusinessForm = () => {
               <div className="w-24 h-24 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-xl">
                 <CheckCircle className="h-12 w-12 text-white" />
               </div>
-              <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
-                <Star className="h-4 w-4 text-yellow-800" fill="currentColor" />
-              </div>
             </div>
-
             <div className="space-y-4">
               <h2 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 Registration Successful!
               </h2>
-              <div className="max-w-md mx-auto space-y-3">
-                <p className="text-lg text-gray-700 font-medium">
-                  Welcome to the Kustom Provider Network!
-                </p>
-                <p className="text-gray-600 leading-relaxed">
-                  Thank you for registering as a provider. Your application is
-                  now under review. Our team will contact you within 24-48 hours
-                  with the next steps.
-                </p>
-              </div>
+              <p className="text-gray-600 leading-relaxed max-w-md mx-auto">
+                Your provider account has been created.
+              </p>
             </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6">
-              <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-full">
-                <Clock className="h-4 w-4" />
-                <span>Review time: 24-48 hours</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-4 py-2 rounded-full">
-                <Shield className="h-4 w-4" />
-                <span>Verification in progress</span>
-              </div>
-            </div>
-
-            <Button
-              onClick={() => setSubmitStatus("idle")}
-              className="mt-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              Register Another Provider
-            </Button>
           </div>
         </CardContent>
       </Card>
@@ -268,14 +187,11 @@ const BusinessForm = () => {
           <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-xl flex items-start space-x-3 shadow-sm">
             <AlertCircle className="h-6 w-6 text-red-500 flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="font-semibold text-red-800 mb-1">
-                Registration Error
-              </h4>
+              <h4 className="font-semibold text-red-800 mb-1">Registration Error</h4>
               <p className="text-red-700">{errorMessage}</p>
             </div>
           </div>
         )}
-
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Personal Information Section */}
           <div className="space-y-6">

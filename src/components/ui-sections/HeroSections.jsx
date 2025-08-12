@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/carousel"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { RouteList } from "@/components/pages/general/paths"
 
 const heroImages = [
   {
@@ -114,7 +115,7 @@ const HeroSection = () => {
 
               <Button
                 size="lg"
-                onClick={() => navigate("/services")}
+                onClick={() => navigate(RouteList.AUTH, { state: { type: "b2c" } })}
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-transform duration-300 transform scale-100 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 aria-label="Browse and find services from verified providers"
               >
@@ -124,7 +125,7 @@ const HeroSection = () => {
               <Button
                 variant="outline"
                 size="lg"
-                onClick={() => navigate("/provider-auth")}
+                onClick={() => navigate(RouteList.AUTH, { state: { type: "b2b" } })}
                 className="border-2 border-orange-500 text-orange-600 hover:bg-orange-50 hover:border-orange-600 px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                 aria-label="Register as a service provider and join our platform"
               >

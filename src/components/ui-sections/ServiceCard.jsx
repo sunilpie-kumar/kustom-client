@@ -2,14 +2,17 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Star, MapPin, MessageCircle, Phone } from "lucide-react"
 
-const ServiceCard = ({ provider, onChatClick, onCallClick }) => {
+const ServiceCard = ({ provider, onChatClick, onCallClick, onOpenDetails }) => {
+  
+
   return (
     <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden">
       <div className="relative">
         <img
           src={provider.image}
           alt={provider.businessName}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+          onClick={() => onOpenDetails?.(provider)}
         />
         {provider.verified && (
           <div className="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
@@ -23,7 +26,7 @@ const ServiceCard = ({ provider, onChatClick, onCallClick }) => {
 
       <CardContent className="p-4 space-y-3">
         <div>
-          <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">
+          <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors cursor-pointer" onClick={() => onOpenDetails?.(provider)}>
             {provider.businessName}
           </h3>
           <p className="text-sm text-gray-600">by {provider.name}</p>

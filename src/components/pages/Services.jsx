@@ -10,12 +10,13 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import ServiceCard from "../ui-sections/ServiceCard"
-import AuthModal from "../auth/AuthModal"
+// import AuthModal from "../auth/AuthModal"
 import ChatModal from "../ui-sections/ChatModal"
 import BookingModal from "../ui-sections/BookingModal"
 import { ArrowLeft, Search, Filter, User, LogOut } from "lucide-react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
+import { RouteList } from "@/components/pages/general/paths"
 
 const mockProviders = [
   {
@@ -163,7 +164,7 @@ const Services = () => {
   const [user, setUser] = useState(null);
 
   // Modal states
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  // const [showAuthModal, setShowAuthModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(null);
@@ -221,26 +222,29 @@ const Services = () => {
     setFilteredProviders(filtered);
   };
 
-  const handleChatClick = (provider) => {
+  const requireAuth = (next) => {
     if (!isAuthenticated) {
-      setSelectedProvider(provider);
-      setPendingAction('chat');
-      setShowAuthModal(true);
-      return;
+      setPendingAction(next);
+      navigate(RouteList.AUTH);
+      return false;
     }
+    return true;
+  }
+
+  const handleChatClick = (provider) => {
+    if (!requireAuth('chat')) return;
     setSelectedProvider(provider);
     setShowChatModal(true);
   };
 
   const handleCallClick = (provider) => {
-    if (!isAuthenticated) {
-      setSelectedProvider(provider);
-      setPendingAction('call');
-      setShowAuthModal(true);
-      return;
-    }
+    if (!requireAuth('call')) return;
     setSelectedProvider(provider);
     setShowBookingModal(true);
+  };
+
+  const handleOpenDetails = (provider) => {
+    navigate(`/services/${provider.id}`, { state: { provider } })
   };
 
   const handleLogout = () => {
@@ -248,33 +252,7 @@ const Services = () => {
     localStorage.removeItem('user');
     setIsAuthenticated(false);
     setUser(null);
-    toast({
-      title: "Signed out",
-      description: "You've been signed out successfully.",
-    });
-  };
-
-  const handleAuthenticated = () => {
-    setIsAuthenticated(true);
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-
-    // Handle pending action after authentication
-    if (pendingAction && selectedProvider) {
-      if (pendingAction === 'chat') {
-        setShowChatModal(true);
-      } else if (pendingAction === 'call') {
-        setShowBookingModal(true);
-      }
-      setPendingAction(null);
-    }
-
-    toast({
-      title: "Welcome!",
-      description: "You're now signed in and can access all features.",
-    });
+    toast({ title: "Signed out", description: "You've been signed out successfully." });
   };
 
   const handleBack = () => {
@@ -309,7 +287,7 @@ const Services = () => {
                 </Button>
               </div>
             ) : (
-              <Button onClick={() => setShowAuthModal(true)}>
+              <Button onClick={() => navigate(RouteList.AUTH)}>
                 Sign In
               </Button>
             )}
@@ -368,6 +346,7 @@ const Services = () => {
               provider={provider}
               onChatClick={handleChatClick}
               onCallClick={handleCallClick}
+              onOpenDetails={handleOpenDetails}
             />
           ))}
         </div>
@@ -381,16 +360,7 @@ const Services = () => {
       </div>
 
       {/* Modals */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => {
-          setShowAuthModal(false);
-          setPendingAction(null);
-          setSelectedProvider(null);
-        }}
-        onAuthenticated={handleAuthenticated}
-      />
-
+      {/* Auth centralized in /auth */}
       <ChatModal
         isOpen={showChatModal}
         onClose={() => setShowChatModal(false)}
