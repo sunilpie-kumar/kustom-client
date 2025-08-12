@@ -7,12 +7,12 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Separator } from "@/components/ui/separator"
 import {
   Send,
-  User,
-  Bot,
   Paperclip,
-  X,
   FileText,
   Image as ImageIcon
 } from "lucide-react"
@@ -40,9 +40,11 @@ const ChatModal = ({ isOpen, onClose, provider }) => {
     if (!provider || !isOpen || !tokenUser) return
     ;(async () => {
       try {
-        const meType = localStorage.getItem('user') ? 'user' : 'provider'
         const peerType = 'provider'
-        const ensure = await postToServer(ApiList.API_URL_CHAT_ENSURE_CONVERSATION, { peerType, peerId: String(provider.id || provider._id) })
+        const ensure = await postToServer(
+          ApiList.API_URL_CHAT_ENSURE_CONVERSATION,
+          { peerType, peerId: String(provider.id || provider._id) }
+        )
         const convo = ensure?.data?.conversation || ensure.conversation || ensure
         setConversation(convo)
         const msgs = await getFromServer(`${ApiList.API_URL_CHAT_MESSAGES}/${convo._id}`)
@@ -54,16 +56,13 @@ const ChatModal = ({ isOpen, onClose, provider }) => {
           attachments: m.attachments || [],
           readBy: m.readBy || []
         })))
-        // mark as read on open
         try { await postToServer(`${ApiList.API_URL_CHAT_MESSAGES}/read/${convo._id}`, {}) } catch (_) {}
 
-        // Load conversations list for sidebar
         try {
           const convs = await getFromServer(ApiList.API_URL_CHAT_CONVERSATIONS)
           setConversations(convs?.data?.conversations || convs.conversations || [])
         } catch (_) {}
 
-        // init socket
         if (!socketRef.current) {
           socketRef.current = io('/', { path: '/socket.io', auth: { token: tokenUser } })
           socketRef.current.on('chat:new_message', ({ message }) => {
@@ -108,9 +107,7 @@ const ChatModal = ({ isOpen, onClose, provider }) => {
 
   const handleFileSelect = e => {
     const files = Array.from(e.target.files || [])
-
     files.forEach(file => {
-      // Check file type and size
       const allowedTypes = [
         "image/",
         "application/pdf",
@@ -118,18 +115,14 @@ const ChatModal = ({ isOpen, onClose, provider }) => {
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       ]
       const isAllowed = allowedTypes.some(type => file.type.startsWith(type))
-
       if (!isAllowed) {
         alert("Only images, PDF, and Word documents are allowed")
         return
       }
-
       if (file.size > 10 * 1024 * 1024) {
-        // 10MB limit
         alert("File size must be less than 10MB")
         return
       }
-
       const form = new FormData()
       form.append('file', file)
       postMultipart(ApiList.API_URL_UPLOAD_CHAT, form, 'VIEW')
@@ -146,19 +139,13 @@ const ChatModal = ({ isOpen, onClose, provider }) => {
         })
         .catch(() => {})
     })
-
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
-    }
+    if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
   const removeAttachment = id => {
     setAttachments(prev => {
       const attachment = prev.find(a => a.id === id)
-      if (attachment) {
-        URL.revokeObjectURL(attachment.url)
-      }
+      if (attachment) URL.revokeObjectURL(attachment.url)
       return prev.filter(a => a.id !== id)
     })
   }
@@ -177,7 +164,7 @@ const ChatModal = ({ isOpen, onClose, provider }) => {
     try {
       const sent = await postToServer(ApiList.API_URL_CHAT_MESSAGES, payload)
       const m = sent?.data?.message || sent.message || sent
-      setMessages(prev => [
+      setMessages(prev => ([
         ...prev,
         {
           id: m._id,
@@ -186,7 +173,7 @@ const ChatModal = ({ isOpen, onClose, provider }) => {
           timestamp: new Date(m.createdAt || Date.now()),
           attachments: m.attachments || []
         }
-      ])
+      ]))
       setNewMessage("")
       setAttachments([])
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -220,115 +207,187 @@ const ChatModal = ({ isOpen, onClose, provider }) => {
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-4xl h-[640px] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 justify-between">
-            <div className="flex items-center gap-2">
-              {provider?.image && (
-                <img src={provider.image} alt={provider?.name || 'Provider'} className="w-8 h-8 rounded-full object-cover" />
-              )}
-              <span>Chat {provider?.name ? `with ${provider.name}` : ''}</span>
+          <DialogTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={provider?.image} alt={`Avatar of ${provider?.name || 'Provider'}`} />
+                <AvatarFallback>{(provider?.name?.[0] || 'P')?.toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <span className="font-medium">
+                Chat {provider?.name ? `with ${provider.name}` : ''}
+              </span>
             </div>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden bg-white rounded-md">
+        <div className="flex-1 overflow-hidden rounded-md bg-card">
           <div className="flex h-full">
             {/* Sidebar conversations */}
-            <aside className="hidden md:block w-72 border-r overflow-y-auto p-3">
-              <div className="text-sm font-semibold mb-2">Conversations</div>
-              <div className="space-y-1">
-                {conversations.map(c => {
-                  const last = c.lastMessage
-                  const unread = c.unreadCount || 0
-                  const active = conversation?._id === c._id
-                  return (
-                    <button key={c._id} onClick={async () => {
-                      try {
-                        const msgs = await getFromServer(`${ApiList.API_URL_CHAT_MESSAGES}/${c._id}`)
-                        setConversation(c)
-                        setMessages((msgs?.data?.messages || msgs.messages || msgs).map(m => ({
-                          id: m._id,
-                          text: m.content,
-                          sender: m.senderType === 'provider' ? 'provider' : 'user',
-                          timestamp: new Date(m.createdAt),
-                          attachments: m.attachments || [],
-                          readBy: m.readBy || []
-                        })))
-                        await postToServer(`${ApiList.API_URL_CHAT_MESSAGES}/read/${c._id}`, {})
-                        socketRef.current?.emit('chat:join', { conversationId: c._id })
-                      } catch(e) {}
-                    }} className={`w-full text-left p-2 rounded flex items-center justify-between ${active ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
-                      <div>
-                        <div className="text-sm font-medium">{c.title || 'Conversation'}</div>
-                        {last && <div className="text-xs text-gray-500 truncate max-w-[180px]">{last.content}</div>}
-                      </div>
-                      {unread > 0 && <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-blue-600 text-white text-xs">{unread}</span>}
-                    </button>
-                  )
-                })}
-              </div>
+            <aside className="hidden md:flex w-72 border-r">
+              <ScrollArea className="h-full w-full p-3">
+                <div className="text-sm font-semibold mb-2">Conversations</div>
+                <div className="space-y-1">
+                  {conversations.map(c => {
+                    const last = c.lastMessage
+                    const unread = c.unreadCount || 0
+                    const active = conversation?._id === c._id
+                    return (
+                      <button
+                        key={c._id}
+                        onClick={async () => {
+                          try {
+                            const msgs = await getFromServer(`${ApiList.API_URL_CHAT_MESSAGES}/${c._id}`)
+                            setConversation(c)
+                            setMessages((msgs?.data?.messages || msgs.messages || msgs).map(m => ({
+                              id: m._id,
+                              text: m.content,
+                              sender: m.senderType === 'provider' ? 'provider' : 'user',
+                              timestamp: new Date(m.createdAt),
+                              attachments: m.attachments || [],
+                              readBy: m.readBy || []
+                            })))
+                            await postToServer(`${ApiList.API_URL_CHAT_MESSAGES}/read/${c._id}`, {})
+                            socketRef.current?.emit('chat:join', { conversationId: c._id })
+                          } catch(e) {}
+                        }}
+                        className={`w-full text-left p-2 rounded-xl flex items-center justify-between transition-colors
+                          ${active ? 'bg-accent text-accent-foreground ring-1 ring-primary/20' : 'hover:bg-muted'}
+                        `}
+                      >
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium truncate">{c.title || 'Conversation'}</div>
+                          {last && (
+                            <div className="text-xs text-muted-foreground truncate">
+                              {last.content || 'Attachment'}
+                            </div>
+                          )}
+                        </div>
+                        {unread > 0 && (
+                          <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-xs">
+                            {unread}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </ScrollArea>
             </aside>
 
             {/* Thread */}
             <div className="flex-1 flex flex-col">
-              <div className="flex-1 overflow-y-auto space-y-4 p-4">
-                {messages.map((message, idx) => {
-                  const prev = messages[idx - 1]
-                  const prevDate = prev ? new Date(prev.timestamp).toDateString() : null
-                  const thisDate = new Date(message.timestamp).toDateString()
-                  const showDivider = !prev || prevDate !== thisDate
-                  const isMine = message.sender !== 'provider'
-                  const otherType = 'provider'
-                  const isRead = (message.readBy || []).some(r => r.readerType === otherType)
-                  return (
-                    <div key={message.id}>
-                      {showDivider && (
-                        <div className="text-center my-2"><span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{thisDate}</span></div>
-                      )}
-                      <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                        {!isMine && (
-                          <img src={provider?.image} alt="" className="w-6 h-6 rounded-full mr-2 self-end hidden sm:block" />
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-4">
+                  {messages.map((message, idx) => {
+                    const prev = messages[idx - 1]
+                    const prevDate = prev ? new Date(prev.timestamp).toDateString() : null
+                    const thisDate = new Date(message.timestamp).toDateString()
+                    const showDivider = !prev || prevDate !== thisDate
+                    const isMine = message.sender !== 'provider'
+                    const otherType = 'provider'
+                    const isRead = (message.readBy || []).some(r => r.readerType === otherType)
+                    return (
+                      <div key={message.id}>
+                        {showDivider && (
+                          <div className="my-2 flex items-center gap-3">
+                            <Separator className="flex-1" />
+                            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                              {thisDate}
+                            </span>
+                            <Separator className="flex-1" />
+                          </div>
                         )}
-                        <div className={`max-w-[80%] rounded-2xl p-3 shadow ${isMine ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-900 rounded-bl-sm'}`}>
-                          {message.text && <p className="text-sm mb-1">{message.text}</p>}
-                          {message.attachments && message.attachments.length > 0 && (
-                            <div className="space-y-2">
-                              {message.attachments.map(attachment => (
-                                <div key={attachment.id} className="flex items-center gap-2 p-2 bg-white/20 rounded text-xs">
-                                  <span className="flex-1 truncate">{attachment.name}</span>
-                                  <a href={attachment.url} target="_blank" rel="noreferrer" className="underline">Open</a>
-                                </div>
-                              ))}
-                            </div>
+                        <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                          {!isMine && (
+                            <Avatar className="h-6 w-6 mr-2 self-end hidden sm:block">
+                              <AvatarImage src={provider?.image} alt={`${provider?.name || 'Provider'} avatar`} />
+                              <AvatarFallback>{(provider?.name?.[0] || 'P')?.toUpperCase()}</AvatarFallback>
+                            </Avatar>
                           )}
-                          <div className="flex items-center gap-2 mt-1 opacity-75">
-                            <span className="text-[10px]">{new Date(message.timestamp).toLocaleTimeString()}</span>
-                            {isMine && (
-                              <span className="text-[10px] flex items-center gap-0.5">
-                                <span>✓</span>
-                                <span className={`${isRead ? 'text-white' : 'text-gray-300'}`}>✓</span>
-                              </span>
+                          <div
+                            className={`max-w-[80%] rounded-2xl p-3 shadow
+                              ${isMine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-muted text-foreground rounded-bl-sm'}
+                            `}
+                          >
+                            {message.text && <p className="text-sm mb-1 break-words">{message.text}</p>}
+
+                            {message.attachments?.length > 0 && (
+                              <div className="space-y-2">
+                                {message.attachments.map((a) => {
+                                  const Icon = getFileIcon(a.type || '')
+                                  return (
+                                    <div key={a.url} className="flex items-center gap-2 p-2 rounded bg-background/60 text-xs border">
+                                      <Icon className="w-4 h-4 shrink-0" />
+                                      <span className="flex-1 truncate">{a.name}</span>
+                                      <a
+                                        href={a.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="underline"
+                                      >
+                                        Open
+                                      </a>
+                                    </div>
+                                  )
+                                })}
+                              </div>
                             )}
+
+                            <div className="flex items-center gap-2 mt-1 opacity-75">
+                              <span className="text-[10px]">
+                                {new Date(message.timestamp).toLocaleTimeString()}
+                              </span>
+                              {isMine && (
+                                <span className="text-[10px]">
+                                  <span>✓</span>
+                                  <span className={`${isRead ? 'opacity-100' : 'opacity-50'} ml-0.5`}>✓</span>
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )
-                })}
-                <div ref={messagesEndRef} />
-                {showTyping && (
-                  <div className="text-xs text-gray-500 italic">Typing…</div>
-                )}
-              </div>
+                    )
+                  })}
+                  <div ref={messagesEndRef} />
+                  {showTyping && (
+                    <div className="text-xs text-muted-foreground italic">Typing…</div>
+                  )}
+                </div>
+              </ScrollArea>
 
               {/* Composer */}
-              <form onSubmit={handleSendMessage} className="flex gap-2 p-3 border-t bg-white">
-                <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf,.doc,.docx" onChange={handleFileSelect} className="hidden" />
-                <Button type="button" size="icon" variant="outline" onClick={() => fileInputRef.current?.click()}>
+              <form onSubmit={handleSendMessage} className="flex gap-2 p-3 border-t bg-card">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  className="rounded-full"
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <Paperclip className="w-4 h-4" />
                 </Button>
-                <Input value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Type your message..." className="flex-1 rounded-full" />
-                <Button type="submit" size="icon" className="rounded-full bg-blue-600 hover:bg-blue-700">
-                  <Send className="w-4 h-4 text-white" />
+                <Input
+                  value={newMessage}
+                  onChange={e => setNewMessage(e.target.value)}
+                  placeholder="Type your message..."
+                  className="rounded-full"
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="rounded-full"
+                  aria-label="Send message"
+                >
+                  <Send className="w-4 h-4" />
                 </Button>
               </form>
             </div>

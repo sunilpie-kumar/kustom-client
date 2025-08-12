@@ -10,6 +10,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Separator } from "@/components/ui/separator"
 import {
   User,
   Building2,
@@ -33,7 +36,6 @@ import io from 'socket.io-client'
 import { getFromServer, postMultipart, postToServer } from "@/utils/axios"
 import ApiList from "@/components/pages/general/api-list"
 import { useAuth } from "@/components/pages/general/AuthContext"
-// removed unused RouteList
 
 const ProviderDashboard = () => {
   const navigate = useNavigate()
@@ -41,7 +43,6 @@ const ProviderDashboard = () => {
   const { logout } = useAuth()
   const [provider, setProvider] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
-  // Chat state (inline, no separate file)
   const [conversations, setConversations] = useState([])
   const [filteredConvos, setFilteredConvos] = useState([])
   const [unreadTotal, setUnreadTotal] = useState(0)
@@ -57,17 +58,28 @@ const ProviderDashboard = () => {
   const [showTyping, setShowTyping] = useState(false)
 
   useEffect(() => {
-    // Check if user is logged in
+    document.title = "Provider Dashboard | Profile, Analytics, Messages"
+    const meta = document.querySelector('meta[name="description"]')
+    const content = "Provider dashboard with profile, analytics, bookings, and real-time messages."
+    if (meta) meta.setAttribute('content', content)
+    else {
+      const m = document.createElement('meta')
+      m.name = 'description'
+      m.content = content
+      document.head.appendChild(m)
+    }
+  }, [])
+
+  useEffect(() => {
     const storedProvider = localStorage.getItem("provider")
     if (!storedProvider) {
       navigate("/provider-auth")
       return
     }
-
     try {
       const providerData = JSON.parse(storedProvider)
       setProvider(providerData)
-    } catch (error) {
+    } catch {
       navigate("/provider-auth")
     } finally {
       setIsLoading(false)
@@ -80,7 +92,6 @@ const ProviderDashboard = () => {
     navigate("/", { replace: true })
   }
 
-  // ---- Chat helpers ----
   const scrollToEnd = () => endRef.current?.scrollIntoView({ behavior: 'smooth' })
 
   const bootstrapSocket = () => {
@@ -172,7 +183,6 @@ const ProviderDashboard = () => {
 
   useEffect(() => { loadConversations() }, [])
 
-  // Emit typing indicator similar to user ChatModal
   useEffect(() => {
     if (!socketRef.current || !currentConvo) return
     const id = setTimeout(() => {
@@ -226,21 +236,21 @@ const ProviderDashboard = () => {
     switch (status) {
       case "approved":
         return (
-          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+          <Badge className="bg-green-600/15 text-green-700 dark:text-green-200">
             <CheckCircle2 className="h-3 w-3 mr-1" />
             Approved
           </Badge>
         )
       case "pending":
         return (
-          <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100">
+          <Badge className="bg-yellow-600/15 text-yellow-700 dark:text-yellow-200">
             <Clock className="h-3 w-3 mr-1" />
             Pending Review
           </Badge>
         )
       case "rejected":
         return (
-          <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
+          <Badge className="bg-red-600/15 text-red-700 dark:text-red-200">
             <XCircle className="h-3 w-3 mr-1" />
             Rejected
           </Badge>
@@ -252,7 +262,7 @@ const ProviderDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-900 dark:via-slate-950 dark:to-indigo-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-primary/5 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading dashboard...</p>
@@ -261,21 +271,20 @@ const ProviderDashboard = () => {
     )
   }
 
-  if (!provider) {
-    return null
-  }
+  if (!provider) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-900 dark:via-slate-950 dark:to-indigo-950">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-primary/5">
       {/* Hero Header */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-10 dark:opacity-20" />
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/10 opacity-50" />
+        <div className="max-w-7xl mx-auto px-4 py-8 relative">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow">
-                {provider.name?.[0] || 'P'}
-              </div>
+              <Avatar className="h-14 w-14 shadow">
+                <AvatarImage src={provider.image} alt={`Avatar of ${provider.name}`} />
+                <AvatarFallback className="text-lg">{provider.name?.[0] || 'P'}</AvatarFallback>
+              </Avatar>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">Welcome back, {provider.name}!</h1>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -295,19 +304,19 @@ const ProviderDashboard = () => {
 
           {/* KPI Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-            <Card className="border-none shadow-md bg-white/70 dark:bg-slate-900/60 backdrop-blur">
+            <Card className="border-none shadow-md bg-card/80 backdrop-blur">
               <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Unread Messages</CardTitle></CardHeader>
               <CardContent><div className="text-3xl font-bold">{unreadTotal}</div></CardContent>
             </Card>
-            <Card className="border-none shadow-md bg-white/70 dark:bg-slate-900/60 backdrop-blur">
+            <Card className="border-none shadow-md bg-card/80 backdrop-blur">
               <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Bookings</CardTitle></CardHeader>
               <CardContent><div className="text-3xl font-bold">142</div></CardContent>
             </Card>
-            <Card className="border-none shadow-md bg-white/70 dark:bg-slate-900/60 backdrop-blur">
+            <Card className="border-none shadow-md bg-card/80 backdrop-blur">
               <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Rating</CardTitle></CardHeader>
               <CardContent><div className="text-3xl font-bold">4.8</div></CardContent>
             </Card>
-            <Card className="border-none shadow-md bg-white/70 dark:bg-slate-900/60 backdrop-blur">
+            <Card className="border-none shadow-md bg-card/80 backdrop-blur">
               <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Response Time</CardTitle></CardHeader>
               <CardContent><div className="text-3xl font-bold">~3m</div></CardContent>
             </Card>
@@ -333,25 +342,23 @@ const ProviderDashboard = () => {
             </CardHeader>
             <CardContent>
               {provider.status === "pending" && (
-                <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                <div className="bg-yellow-600/10 border border-yellow-600/20 rounded-lg p-4">
                   <p className="text-yellow-800 dark:text-yellow-200">
-                    Your account is currently under review. We'll notify you
-                    once it's approved.
+                    Your account is currently under review. We'll notify you once it's approved.
                   </p>
                 </div>
               )}
               {provider.status === "approved" && (
-                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <div className="bg-green-600/10 border border-green-600/20 rounded-lg p-4">
                   <p className="text-green-800 dark:text-green-200">
                     Congratulations! Your account is approved and active.
                   </p>
                 </div>
               )}
               {provider.status === "rejected" && (
-                <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <div className="bg-red-600/10 border border-red-600/20 rounded-lg p-4">
                   <p className="text-red-800 dark:text-red-200">
-                    Your account was not approved. Please contact support for
-                    more information.
+                    Your account was not approved. Please contact support for more information.
                   </p>
                 </div>
               )}
@@ -361,15 +368,25 @@ const ProviderDashboard = () => {
 
         {/* Dashboard Tabs */}
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="w-full flex flex-wrap gap-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 border rounded-2xl p-0.5 shadow">
-            <TabsTrigger value="profile" className="relative h-10 box-border border border-transparent rounded-xl px-4 py-0 flex items-center gap-2 leading-none text-muted-foreground hover:bg-muted/60 transition-colors duration-150 data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20 after:absolute after:left-3 after:right-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"><User className="w-4 h-4"/> Profile</TabsTrigger>
-            <TabsTrigger value="analytics" className="relative h-10 box-border border border-transparent rounded-xl px-4 py-0 flex items-center gap-2 leading-none text-muted-foreground hover:bg-muted/60 transition-colors duration-150 data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20 after:absolute after:left-3 after:right-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"><BarChart3 className="w-4 h-4"/> Analytics</TabsTrigger>
-            <TabsTrigger value="bookings" className="relative h-10 box-border border border-transparent rounded-xl px-4 py-0 flex items-center gap-2 leading-none text-muted-foreground hover:bg-muted/60 transition-colors duration-150 data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20 after:absolute after:left-3 after:right-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"><Users className="w-4 h-4"/> Bookings</TabsTrigger>
-            <TabsTrigger value="settings" className="relative h-10 box-border border border-transparent rounded-xl px-4 py-0 flex items-center gap-2 leading-none text-muted-foreground hover:bg-muted/60 transition-colors duration-150 data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20 after:absolute after:left-3 after:right-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"><Settings className="w-4 h-4"/> Settings</TabsTrigger>
-            <TabsTrigger value="chat" className="relative h-10 box-border border border-transparent rounded-xl px-4 py-0 flex items-center gap-2 leading-none text-muted-foreground hover:bg-muted/60 transition-colors duration-150 data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20 after:absolute after:left-3 after:right-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100">
+          <TabsList className="w-full flex flex-wrap gap-1 bg-card/80 backdrop-blur border rounded-2xl p-0.5 shadow">
+            <TabsTrigger value="profile" className="relative h-10 rounded-xl px-4 py-0 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20">
+              <User className="w-4 h-4 mr-2"/> Profile
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="relative h-10 rounded-xl px-4 py-0 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20">
+              <BarChart3 className="w-4 h-4 mr-2"/> Analytics
+            </TabsTrigger>
+            <TabsTrigger value="bookings" className="relative h-10 rounded-xl px-4 py-0 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20">
+              <Users className="w-4 h-4 mr-2"/> Bookings
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="relative h-10 rounded-xl px-4 py-0 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20">
+              <Settings className="w-4 h-4 mr-2"/> Settings
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="relative h-10 rounded-xl px-4 py-0 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20">
               Messages
               {unreadTotal > 0 && (
-                <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-blue-600 text-white text-xs">{unreadTotal}</span>
+                <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-xs">
+                  {unreadTotal}
+                </span>
               )}
             </TabsTrigger>
           </TabsList>
@@ -377,7 +394,6 @@ const ProviderDashboard = () => {
           {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Personal Information */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -393,42 +409,32 @@ const ProviderDashboard = () => {
                       <p className="text-sm text-muted-foreground">Full Name</p>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-3">
                     <Mail className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium">{provider.email}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Email Address
-                      </p>
+                      <p className="text-sm text-muted-foreground">Email Address</p>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-3">
                     <Phone className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium">{provider.phone}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Phone Number
-                      </p>
+                      <p className="text-sm text-muted-foreground">Phone Number</p>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-3">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium">
                         {new Date(provider.created_at).toLocaleDateString()}
                       </p>
-                      <p className="text-sm text-muted-foreground">
-                        Member Since
-                      </p>
+                      <p className="text-sm text-muted-foreground">Member Since</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Business Information */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -441,22 +447,16 @@ const ProviderDashboard = () => {
                     <Building2 className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium">{provider.company_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Company Name
-                      </p>
+                      <p className="text-sm text-muted-foreground">Company Name</p>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-3">
                     <Settings className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium">{provider.service_type}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Service Type
-                      </p>
+                      <p className="text-sm text-muted-foreground">Service Type</p>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-3">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <div>
@@ -464,23 +464,17 @@ const ProviderDashboard = () => {
                       <p className="text-sm text-muted-foreground">Location</p>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-3">
                     <BarChart3 className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <p className="font-medium">
-                        {provider.experience_years} years
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Experience
-                      </p>
+                      <p className="font-medium">{provider.experience_years} years</p>
+                      <p className="text-sm text-muted-foreground">Experience</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Business Description */}
             <Card>
               <CardHeader>
                 <CardTitle>Business Description</CardTitle>
@@ -498,41 +492,29 @@ const ProviderDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total Views
-                  </CardTitle>
+                  <CardTitle className="text-sm font-medium">Total Views</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">2,847</div>
-                  <p className="text-xs text-muted-foreground">
-                    +12% from last month
-                  </p>
+                  <p className="text-xs text-muted-foreground">+12% from last month</p>
                 </CardContent>
               </Card>
-
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Bookings
-                  </CardTitle>
+                  <CardTitle className="text-sm font-medium">Bookings</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">142</div>
-                  <p className="text-xs text-muted-foreground">
-                    +8% from last month
-                  </p>
+                  <p className="text-xs text-muted-foreground">+8% from last month</p>
                 </CardContent>
               </Card>
-
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium">Rating</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">4.8</div>
-                  <p className="text-xs text-muted-foreground">
-                    Based on 89 reviews
-                  </p>
+                  <p className="text-xs text-muted-foreground">Based on 89 reviews</p>
                 </CardContent>
               </Card>
             </div>
@@ -543,19 +525,14 @@ const ProviderDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Recent Bookings</CardTitle>
-                <CardDescription>
-                  Your latest booking requests and appointments
-                </CardDescription>
+                <CardDescription>Your latest booking requests and appointments</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-12">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-lg font-medium text-muted-foreground">
-                    No bookings yet
-                  </p>
+                  <p className="text-lg font-medium text-muted-foreground">No bookings yet</p>
                   <p className="text-sm text-muted-foreground">
-                    Once customers start booking your services, they'll appear
-                    here.
+                    Once customers start booking your services, they'll appear here.
                   </p>
                 </div>
               </CardContent>
@@ -567,9 +544,7 @@ const ProviderDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Account Settings</CardTitle>
-                <CardDescription>
-                  Manage your account preferences and settings
-                </CardDescription>
+                <CardDescription>Manage your account preferences and settings</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -577,12 +552,10 @@ const ProviderDashboard = () => {
                     <Settings className="h-4 w-4 mr-2" />
                     Edit Profile Information
                   </Button>
-
                   <Button variant="outline" className="w-full justify-start">
                     <Mail className="h-4 w-4 mr-2" />
                     Notification Preferences
                   </Button>
-
                   <Button variant="outline" className="w-full justify-start">
                     <Building2 className="h-4 w-4 mr-2" />
                     Business Settings
@@ -596,91 +569,140 @@ const ProviderDashboard = () => {
           <TabsContent value="chat">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               {/* Sidebar */}
-              <Card className="md:col-span-4 p-3 h-[70vh] overflow-y-auto">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-semibold">Conversations</div>
-                  {unreadTotal > 0 && (
-                    <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-blue-600 text-white text-xs">{unreadTotal}</span>
-                  )}
+              <Card className="md:col-span-4 h-[70vh] overflow-hidden">
+                <div className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-semibold">Conversations</div>
+                    {unreadTotal > 0 && (
+                      <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-xs">
+                        {unreadTotal}
+                      </span>
+                    )}
+                  </div>
+                  <Input
+                    placeholder="Search…"
+                    className="mb-2"
+                    onChange={(e) => {
+                      const q = e.target.value.toLowerCase()
+                      setFilteredConvos(conversations.filter(c => {
+                        const last = c.lastMessage?.content || ''
+                        return last.toLowerCase().includes(q)
+                      }))
+                    }}
+                  />
                 </div>
-                <Input placeholder="Search…" className="mb-2" onChange={(e) => {
-                  const q = e.target.value.toLowerCase()
-                  setFilteredConvos(conversations.filter(c => {
-                    const last = c.lastMessage?.content || ''
-                    return last.toLowerCase().includes(q)
-                  }))
-                }} />
-                {loadingConvos && <div className="text-sm text-muted-foreground">Loading…</div>}
-                <div className="space-y-1">
-                  {(filteredConvos.length ? filteredConvos : conversations).map(c => {
-                    const last = c.lastMessage
-                    const unread = c.unreadCount || 0
-                    const active = currentConvo?._id === c._id
-                    return (
-                      <button key={c._id} onClick={() => openConversation(c)} className={`w-full text-left p-2 rounded flex items-center justify-between ${active ? 'bg-blue-50' : 'hover:bg-muted'}`}>
-                        <div>
-                          <div className="text-sm font-medium">Customer</div>
-                          {last && <div className="text-xs text-muted-foreground truncate max-w-[180px]">{last.content || 'Attachment'}</div>}
-                        </div>
-                        {unread > 0 && <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-blue-600 text-white text-xs">{unread}</span>}
-                      </button>
-                    )
-                  })}
-                </div>
+                <Separator />
+                <ScrollArea className="h-[calc(70vh-110px)] p-3">
+                  {loadingConvos && <div className="text-sm text-muted-foreground mb-2">Loading…</div>}
+                  <div className="space-y-1">
+                    {(filteredConvos.length ? filteredConvos : conversations).map(c => {
+                      const last = c.lastMessage
+                      const unread = c.unreadCount || 0
+                      const active = currentConvo?._id === c._id
+                      return (
+                        <button
+                          key={c._id}
+                          onClick={() => openConversation(c)}
+                          className={`w-full text-left p-2 rounded-xl flex items-center justify-between transition-colors
+                            ${active ? 'bg-accent text-accent-foreground ring-1 ring-primary/20' : 'hover:bg-muted'}
+                          `}
+                        >
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium">Customer</div>
+                            {last && (
+                              <div className="text-xs text-muted-foreground truncate max-w-[180px]">
+                                {last.content || 'Attachment'}
+                              </div>
+                            )}
+                          </div>
+                          {unread > 0 && (
+                            <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-xs">
+                              {unread}
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </ScrollArea>
               </Card>
 
               {/* Thread */}
-              <Card className="md:col-span-8 flex flex-col h-[70vh]">
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {!currentConvo && <div className="text-sm text-muted-foreground">Select a conversation to start messaging.</div>}
-                  {messages.map((m, idx) => {
-                    const prev = messages[idx-1]
-                    const showDate = !prev || new Date(prev.timestamp).toDateString() !== new Date(m.timestamp).toDateString()
-                    const isMine = m.sender === 'me'
-                    return (
-                      <div key={m.id}>
-                        {showDate && (
-                          <div className="text-center my-2"><span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{new Date(m.timestamp).toDateString()}</span></div>
-                        )}
-                        <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                          {!isMine && (
-                            <div className="w-6 h-6 rounded-full bg-gray-300 mr-2 self-end hidden sm:flex items-center justify-center text-xs">U</div>
+              <Card className="md:col-span-8 flex flex-col h-[70vh] overflow-hidden">
+                <ScrollArea className="flex-1 p-4">
+                  {!currentConvo && (
+                    <div className="text-sm text-muted-foreground">Select a conversation to start messaging.</div>
+                  )}
+                  <div className="space-y-3">
+                    {messages.map((m, idx) => {
+                      const prev = messages[idx-1]
+                      const showDate = !prev || new Date(prev.timestamp).toDateString() !== new Date(m.timestamp).toDateString()
+                      const isMine = m.sender === 'me'
+                      return (
+                        <div key={m.id}>
+                          {showDate && (
+                            <div className="text-center my-2">
+                              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                                {new Date(m.timestamp).toDateString()}
+                              </span>
+                            </div>
                           )}
-                          <div className={`max-w-[75%] rounded-2xl p-3 shadow ${isMine ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-900 rounded-bl-sm'}`}>
-                            {m.text && <p className="text-sm mb-1">{m.text}</p>}
-                            {m.attachments && m.attachments.length > 0 && (
-                              <div className="space-y-2">
-                                {m.attachments.map((a, i) => (
-                                  <div key={i} className="flex items-center gap-2 p-2 bg-white/20 rounded text-xs">
-                                    <span className="flex-1 truncate">{a.name}</span>
-                                    <a href={a.url} target="_blank" rel="noreferrer" className="underline">Open</a>
-                                  </div>
-                                ))}
-                              </div>
+                          <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                            {!isMine && (
+                              <Avatar className="h-6 w-6 mr-2 self-end hidden sm:flex">
+                                <AvatarFallback>U</AvatarFallback>
+                              </Avatar>
                             )}
-                            <div className="flex items-center gap-2 mt-1 opacity-75">
-                              <span className="text-[10px]">{new Date(m.timestamp).toLocaleTimeString()}</span>
+                            <div className={`max-w-[75%] rounded-2xl p-3 shadow
+                              ${isMine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-muted text-foreground rounded-bl-sm'}
+                            `}>
+                              {m.text && <p className="text-sm mb-1 break-words">{m.text}</p>}
+                              {m.attachments?.length > 0 && (
+                                <div className="space-y-2">
+                                  {m.attachments.map((a, i) => (
+                                    <div key={i} className="flex items-center gap-2 p-2 bg-background/60 border rounded text-xs">
+                                      <span className="flex-1 truncate">{a.name}</span>
+                                      <a href={a.url} target="_blank" rel="noreferrer" className="underline">Open</a>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2 mt-1 opacity-75">
+                                <span className="text-[10px]">{new Date(m.timestamp).toLocaleTimeString()}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )
-                  })}
-                  <div ref={endRef} />
-                  {showTyping && (
-                    <div className="text-xs text-gray-500 italic">Typing…</div>
-                  )}
-                </div>
+                      )
+                    })}
+                    <div ref={endRef} />
+                    {showTyping && (
+                      <div className="text-xs text-muted-foreground italic">Typing…</div>
+                    )}
+                  </div>
+                </ScrollArea>
 
                 {/* Composer */}
                 <form onSubmit={handleSendMsg} className="p-3 border-t flex gap-2">
-                  <input ref={fileRef} type="file" multiple accept="image/*,.pdf,.doc,.docx" onChange={handleUploadChat} className="hidden" />
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    multiple
+                    accept="image/*,.pdf,.doc,.docx"
+                    onChange={handleUploadChat}
+                    className="hidden"
+                  />
                   <Button type="button" variant="outline" size="icon" className="rounded-full" onClick={() => fileRef.current?.click()}>
                     <Paperclip className="w-4 h-4" />
                   </Button>
-                  <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type your message…" className="rounded-full" />
-                  <Button type="submit" size="icon" className="rounded-full bg-blue-600 hover:bg-blue-700">
-                    <Send className="w-4 h-4 text-white" />
+                  <Input
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type your message…"
+                    className="rounded-full"
+                  />
+                  <Button type="submit" size="icon" className="rounded-full" aria-label="Send">
+                    <Send className="w-4 h-4" />
                   </Button>
                 </form>
               </Card>
