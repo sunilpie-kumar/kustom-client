@@ -15,8 +15,10 @@ const ApiList = {
   // User management endpoints
   API_URL_FOR_GET_USER_PROFILE: "users",
   API_URL_FOR_UPDATE_USER_PROFILE: "users",
+  API_URL_FOR_USER_ME: "users/me",
   API_URL_FOR_GET_PROVIDER_PROFILE: "providers",
   API_URL_FOR_UPDATE_PROVIDER_PROFILE: "providers",
+  API_URL_FOR_PROVIDER_ME: "providers/me",
   
   // Services endpoints
   API_URL_FOR_GET_ALL_SERVICES: "services",
@@ -25,6 +27,20 @@ const ApiList = {
   API_URL_FOR_CREATE_SERVICE: "services",
   API_URL_FOR_UPDATE_SERVICE: "services",
   API_URL_FOR_DELETE_SERVICE: "services",
+
+  // Twilio endpoints
+  API_URL_TWILIO_STATUS: "twilio/status",
+  API_URL_TWILIO_SMS: "twilio/sms",
+  API_URL_TWILIO_WHATSAPP: "twilio/whatsapp",
+  API_URL_TWILIO_BULK_SMS: "twilio/bulk-sms",
+  API_URL_TWILIO_VERIFY_SEND: "twilio/verify/send",
+  API_URL_TWILIO_VERIFY_CHECK: "twilio/verify/check",
+
+  // Chat endpoints
+  API_URL_CHAT_CONVERSATIONS: "chat/conversations",
+  API_URL_CHAT_ENSURE_CONVERSATION: "chat/conversations/ensure",
+  API_URL_CHAT_MESSAGES: "chat/messages",
+  API_URL_UPLOAD_CHAT: "upload/chat",
   
   // Bookings endpoints
   API_URL_FOR_CREATE_BOOKING: "bookings",

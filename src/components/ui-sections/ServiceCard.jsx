@@ -27,9 +27,9 @@ const ServiceCard = ({ provider, onChatClick, onCallClick, onOpenDetails }) => {
       <CardContent className="p-4 space-y-3">
         <div>
           <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors cursor-pointer" onClick={() => onOpenDetails?.(provider)}>
-            {provider.businessName}
+            {provider.businessName || provider.name || 'Service'}
           </h3>
-          <p className="text-sm text-gray-600">by {provider.name}</p>
+          <p className="text-sm text-gray-600">by {provider.name || provider.ownerName || 'Provider'}</p>
         </div>
 
         <div className="flex items-center gap-2">

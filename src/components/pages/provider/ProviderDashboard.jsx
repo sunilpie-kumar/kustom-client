@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -8,6 +8,7 @@ import {
   CardTitle
 } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import {
   User,
@@ -22,16 +23,38 @@ import {
   LogOut,
   CheckCircle2,
   Clock,
-  XCircle
+  XCircle,
+  Paperclip,
+  Send
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
+import io from 'socket.io-client'
+import { getFromServer, postMultipart, postToServer } from "@/utils/axios"
+import ApiList from "@/components/pages/general/api-list"
+import { useAuth } from "@/components/pages/general/AuthContext"
+// removed unused RouteList
 
 const ProviderDashboard = () => {
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { logout } = useAuth()
   const [provider, setProvider] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  // Chat state (inline, no separate file)
+  const [conversations, setConversations] = useState([])
+  const [filteredConvos, setFilteredConvos] = useState([])
+  const [unreadTotal, setUnreadTotal] = useState(0)
+  const [currentConvo, setCurrentConvo] = useState(null)
+  const [messages, setMessages] = useState([])
+  const [newMessage, setNewMessage] = useState('')
+  const [loadingConvos, setLoadingConvos] = useState(false)
+  const [loadingThread, setLoadingThread] = useState(false)
+  const fileRef = useRef(null)
+  const endRef = useRef(null)
+  const socketRef = useRef(null)
+  const [typing, setTyping] = useState(false)
+  const [showTyping, setShowTyping] = useState(false)
 
   useEffect(() => {
     // Check if user is logged in
@@ -51,13 +74,152 @@ const ProviderDashboard = () => {
     }
   }, [navigate])
 
-  const handleLogout = () => {
-    localStorage.removeItem("provider")
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out."
+  const handleLogout = async () => {
+    await logout()
+    toast({ title: "Logged Out", description: "You have been successfully logged out." })
+    navigate("/", { replace: true })
+  }
+
+  // ---- Chat helpers ----
+  const scrollToEnd = () => endRef.current?.scrollIntoView({ behavior: 'smooth' })
+
+  const bootstrapSocket = () => {
+    const token = localStorage.getItem('token')
+    if (socketRef.current || !token) return
+    socketRef.current = io('/', { path: '/socket.io', auth: { token } })
+    socketRef.current.on('chat:new_message', async ({ message }) => {
+      if (currentConvo && message.conversationId === currentConvo._id) {
+        setMessages(prev => ([...prev, {
+          id: message._id,
+          text: message.content,
+          sender: message.senderType === 'provider' ? 'me' : 'peer',
+          timestamp: new Date(message.createdAt),
+          attachments: message.attachments || [],
+          readBy: message.readBy || []
+        }]))
+        scrollToEnd()
+        try {
+          await postToServer(`${ApiList.API_URL_CHAT_MESSAGES}/read/${currentConvo._id}`, {})
+          setConversations(prev => prev.map(c => c._id === currentConvo._id ? { ...c, unreadCount: 0 } : c))
+          setFilteredConvos(prev => prev.map(c => c._id === currentConvo._id ? { ...c, unreadCount: 0 } : c))
+          recomputeUnreadTotal(conversations.map(c => c._id === currentConvo._id ? { ...c, unreadCount: 0 } : c))
+        } catch {}
+      } else {
+        setConversations(prev => prev.map(c => c._id === message.conversationId ? { ...c, unreadCount: (c.unreadCount || 0) + 1 } : c))
+        setFilteredConvos(prev => prev.map(c => c._id === message.conversationId ? { ...c, unreadCount: (c.unreadCount || 0) + 1 } : c))
+        recomputeUnreadTotal(conversations)
+      }
     })
-    navigate("/")
+    socketRef.current.on('chat:read', ({ conversationId, reader }) => {
+      if (!currentConvo || conversationId !== currentConvo._id) return
+      setMessages(prev => prev.map(m => {
+        const exists = (m.readBy || []).some(r => r.readerType === reader.participantType && String(r.readerId) === String(reader.participantId))
+        return exists ? m : { ...m, readBy: [ ...(m.readBy||[]), { readerType: reader.participantType, readerId: reader.participantId, readAt: new Date() } ] }
+      }))
+    })
+    socketRef.current.on('chat:typing', ({ conversationId, isTyping }) => {
+      if (!currentConvo || conversationId !== currentConvo._id) return
+      setTyping(!!isTyping)
+      if (isTyping) {
+        setShowTyping(true)
+        setTimeout(() => setShowTyping(false), 1500)
+      }
+    })
+  }
+
+  const recomputeUnreadTotal = (convs) => {
+    const total = (convs || []).reduce((acc, c) => acc + (c.unreadCount || 0), 0)
+    setUnreadTotal(total)
+  }
+
+  const loadConversations = async () => {
+    try {
+      setLoadingConvos(true)
+      const res = await getFromServer(ApiList.API_URL_CHAT_CONVERSATIONS)
+      const convs = res?.data?.conversations || res.conversations || []
+      setConversations(convs)
+      setFilteredConvos(convs)
+      recomputeUnreadTotal(convs)
+    } finally {
+      setLoadingConvos(false)
+    }
+  }
+
+  const openConversation = async (convo) => {
+    try {
+      setCurrentConvo(convo)
+      setLoadingThread(true)
+      const msgs = await getFromServer(`${ApiList.API_URL_CHAT_MESSAGES}/${convo._id}`)
+      setMessages((msgs?.data?.messages || msgs.messages || msgs).map(m => ({
+        id: m._id,
+        text: m.content,
+        sender: m.senderType === 'provider' ? 'me' : 'peer',
+        timestamp: new Date(m.createdAt),
+        attachments: m.attachments || [],
+        readBy: m.readBy || []
+      })))
+      bootstrapSocket()
+      socketRef.current?.emit('chat:join', { conversationId: convo._id })
+      await postToServer(`${ApiList.API_URL_CHAT_MESSAGES}/read/${convo._id}`, {})
+      setConversations(prev => prev.map(c => c._id === convo._id ? { ...c, unreadCount: 0 } : c))
+      setFilteredConvos(prev => prev.map(c => c._id === convo._id ? { ...c, unreadCount: 0 } : c))
+      recomputeUnreadTotal(conversations.map(c => c._id === convo._id ? { ...c, unreadCount: 0 } : c))
+      scrollToEnd()
+    } finally {
+      setLoadingThread(false)
+    }
+  }
+
+  useEffect(() => { loadConversations() }, [])
+
+  // Emit typing indicator similar to user ChatModal
+  useEffect(() => {
+    if (!socketRef.current || !currentConvo) return
+    const id = setTimeout(() => {
+      socketRef.current.emit('chat:typing', { conversationId: currentConvo._id, isTyping: !!newMessage })
+    }, 200)
+    return () => clearTimeout(id)
+  }, [newMessage, currentConvo])
+
+  const handleSendMsg = async (e) => {
+    e.preventDefault()
+    if (!currentConvo || !newMessage.trim()) return
+    const other = (currentConvo.participants || []).find(p => p.participantType === 'user')
+    const payload = {
+      conversationId: currentConvo._id,
+      content: newMessage,
+      attachments: [],
+      receiverType: 'user',
+      receiverId: String(other.participantId),
+    }
+    const sent = await postToServer(ApiList.API_URL_CHAT_MESSAGES, payload)
+    const m = sent?.data?.message || sent.message || sent
+    setMessages(prev => ([...prev, { id: m._id, text: m.content, sender: 'me', timestamp: new Date(m.createdAt || Date.now()), attachments: m.attachments || [], readBy: m.readBy || [] }]))
+    setNewMessage('')
+    scrollToEnd()
+  }
+
+  const handleUploadChat = async (e) => {
+    const files = Array.from(e.target.files || [])
+    if (!currentConvo || files.length === 0) return
+    const other = (currentConvo.participants || []).find(p => p.participantType === 'user')
+    for (const file of files) {
+      const fd = new FormData()
+      fd.append('file', file)
+      const up = await postMultipart(ApiList.API_URL_UPLOAD_CHAT, fd, 'VIEW')
+      const payload = {
+        conversationId: currentConvo._id,
+        content: '',
+        attachments: [{ url: up?.data?.url || up.url, name: file.name, size: file.size, type: file.type.startsWith('image/') ? 'image' : 'file' }],
+        receiverType: 'user',
+        receiverId: String(other.participantId),
+      }
+      const sent = await postToServer(ApiList.API_URL_CHAT_MESSAGES, payload)
+      const m = sent?.data?.message || sent.message || sent
+      setMessages(prev => ([...prev, { id: m._id, text: '', sender: 'me', timestamp: new Date(m.createdAt || Date.now()), attachments: m.attachments || [], readBy: m.readBy || [] }]))
+      scrollToEnd()
+    }
+    e.target.value = ''
   }
 
   const getStatusBadge = status => {
@@ -90,7 +252,7 @@ const ProviderDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-900 dark:via-slate-950 dark:to-indigo-950 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading dashboard...</p>
@@ -104,27 +266,51 @@ const ProviderDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-      {/* Header */}
-      <div className="bg-card/95 backdrop-blur border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                Provider Dashboard
-              </h1>
-              <p className="text-muted-foreground">
-                Welcome back, {provider.name}!
-              </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-900 dark:via-slate-950 dark:to-indigo-950">
+      {/* Hero Header */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-10 dark:opacity-20" />
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow">
+                {provider.name?.[0] || 'P'}
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">Welcome back, {provider.name}!</h1>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Building2 className="w-4 h-4" />
+                  <span>{provider.company_name || provider.businessName || 'Your Business'}</span>
+                  <span className="mx-1">•</span>
+                  {getStatusBadge(provider.status)}
+                </div>
+              </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
+                <LogOut className="h-4 w-4" /> Logout
+              </Button>
+            </div>
+          </div>
+
+          {/* KPI Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+            <Card className="border-none shadow-md bg-white/70 dark:bg-slate-900/60 backdrop-blur">
+              <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Unread Messages</CardTitle></CardHeader>
+              <CardContent><div className="text-3xl font-bold">{unreadTotal}</div></CardContent>
+            </Card>
+            <Card className="border-none shadow-md bg-white/70 dark:bg-slate-900/60 backdrop-blur">
+              <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Bookings</CardTitle></CardHeader>
+              <CardContent><div className="text-3xl font-bold">142</div></CardContent>
+            </Card>
+            <Card className="border-none shadow-md bg-white/70 dark:bg-slate-900/60 backdrop-blur">
+              <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Rating</CardTitle></CardHeader>
+              <CardContent><div className="text-3xl font-bold">4.8</div></CardContent>
+            </Card>
+            <Card className="border-none shadow-md bg-white/70 dark:bg-slate-900/60 backdrop-blur">
+              <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Response Time</CardTitle></CardHeader>
+              <CardContent><div className="text-3xl font-bold">~3m</div></CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -175,11 +361,17 @@ const ProviderDashboard = () => {
 
         {/* Dashboard Tabs */}
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-md">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="bookings">Bookings</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsList className="w-full flex flex-wrap gap-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 border rounded-2xl p-0.5 shadow">
+            <TabsTrigger value="profile" className="relative h-10 box-border border border-transparent rounded-xl px-4 py-0 flex items-center gap-2 leading-none text-muted-foreground hover:bg-muted/60 transition-colors duration-150 data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20 after:absolute after:left-3 after:right-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"><User className="w-4 h-4"/> Profile</TabsTrigger>
+            <TabsTrigger value="analytics" className="relative h-10 box-border border border-transparent rounded-xl px-4 py-0 flex items-center gap-2 leading-none text-muted-foreground hover:bg-muted/60 transition-colors duration-150 data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20 after:absolute after:left-3 after:right-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"><BarChart3 className="w-4 h-4"/> Analytics</TabsTrigger>
+            <TabsTrigger value="bookings" className="relative h-10 box-border border border-transparent rounded-xl px-4 py-0 flex items-center gap-2 leading-none text-muted-foreground hover:bg-muted/60 transition-colors duration-150 data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20 after:absolute after:left-3 after:right-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"><Users className="w-4 h-4"/> Bookings</TabsTrigger>
+            <TabsTrigger value="settings" className="relative h-10 box-border border border-transparent rounded-xl px-4 py-0 flex items-center gap-2 leading-none text-muted-foreground hover:bg-muted/60 transition-colors duration-150 data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20 after:absolute after:left-3 after:right-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"><Settings className="w-4 h-4"/> Settings</TabsTrigger>
+            <TabsTrigger value="chat" className="relative h-10 box-border border border-transparent rounded-xl px-4 py-0 flex items-center gap-2 leading-none text-muted-foreground hover:bg-muted/60 transition-colors duration-150 data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20 after:absolute after:left-3 after:right-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100">
+              Messages
+              {unreadTotal > 0 && (
+                <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-blue-600 text-white text-xs">{unreadTotal}</span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
@@ -398,6 +590,101 @@ const ProviderDashboard = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Chat Tab */}
+          <TabsContent value="chat">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+              {/* Sidebar */}
+              <Card className="md:col-span-4 p-3 h-[70vh] overflow-y-auto">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-semibold">Conversations</div>
+                  {unreadTotal > 0 && (
+                    <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-blue-600 text-white text-xs">{unreadTotal}</span>
+                  )}
+                </div>
+                <Input placeholder="Search…" className="mb-2" onChange={(e) => {
+                  const q = e.target.value.toLowerCase()
+                  setFilteredConvos(conversations.filter(c => {
+                    const last = c.lastMessage?.content || ''
+                    return last.toLowerCase().includes(q)
+                  }))
+                }} />
+                {loadingConvos && <div className="text-sm text-muted-foreground">Loading…</div>}
+                <div className="space-y-1">
+                  {(filteredConvos.length ? filteredConvos : conversations).map(c => {
+                    const last = c.lastMessage
+                    const unread = c.unreadCount || 0
+                    const active = currentConvo?._id === c._id
+                    return (
+                      <button key={c._id} onClick={() => openConversation(c)} className={`w-full text-left p-2 rounded flex items-center justify-between ${active ? 'bg-blue-50' : 'hover:bg-muted'}`}>
+                        <div>
+                          <div className="text-sm font-medium">Customer</div>
+                          {last && <div className="text-xs text-muted-foreground truncate max-w-[180px]">{last.content || 'Attachment'}</div>}
+                        </div>
+                        {unread > 0 && <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-blue-600 text-white text-xs">{unread}</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              </Card>
+
+              {/* Thread */}
+              <Card className="md:col-span-8 flex flex-col h-[70vh]">
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {!currentConvo && <div className="text-sm text-muted-foreground">Select a conversation to start messaging.</div>}
+                  {messages.map((m, idx) => {
+                    const prev = messages[idx-1]
+                    const showDate = !prev || new Date(prev.timestamp).toDateString() !== new Date(m.timestamp).toDateString()
+                    const isMine = m.sender === 'me'
+                    return (
+                      <div key={m.id}>
+                        {showDate && (
+                          <div className="text-center my-2"><span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{new Date(m.timestamp).toDateString()}</span></div>
+                        )}
+                        <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                          {!isMine && (
+                            <div className="w-6 h-6 rounded-full bg-gray-300 mr-2 self-end hidden sm:flex items-center justify-center text-xs">U</div>
+                          )}
+                          <div className={`max-w-[75%] rounded-2xl p-3 shadow ${isMine ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-900 rounded-bl-sm'}`}>
+                            {m.text && <p className="text-sm mb-1">{m.text}</p>}
+                            {m.attachments && m.attachments.length > 0 && (
+                              <div className="space-y-2">
+                                {m.attachments.map((a, i) => (
+                                  <div key={i} className="flex items-center gap-2 p-2 bg-white/20 rounded text-xs">
+                                    <span className="flex-1 truncate">{a.name}</span>
+                                    <a href={a.url} target="_blank" rel="noreferrer" className="underline">Open</a>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 mt-1 opacity-75">
+                              <span className="text-[10px]">{new Date(m.timestamp).toLocaleTimeString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  <div ref={endRef} />
+                  {showTyping && (
+                    <div className="text-xs text-gray-500 italic">Typing…</div>
+                  )}
+                </div>
+
+                {/* Composer */}
+                <form onSubmit={handleSendMsg} className="p-3 border-t flex gap-2">
+                  <input ref={fileRef} type="file" multiple accept="image/*,.pdf,.doc,.docx" onChange={handleUploadChat} className="hidden" />
+                  <Button type="button" variant="outline" size="icon" className="rounded-full" onClick={() => fileRef.current?.click()}>
+                    <Paperclip className="w-4 h-4" />
+                  </Button>
+                  <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type your message…" className="rounded-full" />
+                  <Button type="submit" size="icon" className="rounded-full bg-blue-600 hover:bg-blue-700">
+                    <Send className="w-4 h-4 text-white" />
+                  </Button>
+                </form>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

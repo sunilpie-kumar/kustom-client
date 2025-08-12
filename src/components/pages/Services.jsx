@@ -17,6 +17,9 @@ import { ArrowLeft, Search, Filter, User, LogOut } from "lucide-react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
 import { RouteList } from "@/components/pages/general/paths"
+import { useAuth } from "@/components/pages/general/AuthContext"
+import { getFromServer } from "@/utils/axios"
+import ApiList from "@/components/pages/general/api-list"
 
 const mockProviders = [
   {
@@ -160,8 +163,8 @@ const Services = () => {
   const [providers, setProviders] = useState(mockProviders);
   const [filteredProviders, setFilteredProviders] = useState(mockProviders);
   const [loading, setLoading] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
+  const [error, setError] = useState("");
+  const { isAuthenticated, principal, logout } = useAuth();
 
   // Modal states
   // const [showAuthModal, setShowAuthModal] = useState(false);
@@ -171,22 +174,59 @@ const Services = () => {
   const [pendingAction, setPendingAction] = useState(null);
 
   useEffect(() => {
-    // Check if user is authenticated from localStorage
-    const authStatus = localStorage.getItem('isAuthenticated');
-    const userData = localStorage.getItem('user');
+    const fetchProviders = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const res = await getFromServer(ApiList.API_URL_FOR_GET_PROVIDERS);
+        let listCandidate = res;
+        if (!Array.isArray(listCandidate)) {
+          if (Array.isArray(res?.data)) listCandidate = res.data;
+          else if (Array.isArray(res?.providers)) listCandidate = res.providers;
+          else if (Array.isArray(res?.data?.providers)) listCandidate = res.data.providers;
+          else if (Array.isArray(res?.items)) listCandidate = res.items;
+          else if (Array.isArray(res?.results)) listCandidate = res.results;
+          else listCandidate = [];
+        }
+        const mapped = listCandidate.map((p) => ({
+          id: String(p._id || p.id),
+          name: p.fullName || p.contactName || p.ownerName || "",
+          businessName: p.businessName || p.companyName || p.name || "",
+          category: p.category || p.primaryCategory || "business-services",
+          rating: p.averageRating || p.rating || 4.8,
+          reviewCount: p.reviewsCount || p.reviewCount || 0,
+          location: (p.location && (p.location.city || p.location.state)) ? [p.location.city, p.location.state].filter(Boolean).join(", ") : (p.address || p.city || ""),
+          image: p.logoUrl || p.imageUrl || p.avatarUrl || "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=600&q=80",
+          description: p.description || p.about || "Professional services tailored to your needs.",
+          price: (p.pricing && p.pricing.starting) || p.price || "",
+          verified: Boolean(p.verified || p.isVerified),
+        }));
 
-    if (authStatus === 'true' && userData) {
-      setIsAuthenticated(true);
-      setUser(JSON.parse(userData));
-    }
+        // Merge server providers with mock for demo completeness (server first, then any unique mock entries)
+        const serverIds = new Set(mapped.map(m => m.id));
+        const demoExtras = mockProviders.filter(mp => !serverIds.has(mp.id));
+        const finalList = (mapped.length > 0 ? [...mapped, ...demoExtras] : mockProviders);
+        setProviders(finalList);
 
-    // Handle category filter from URL parameters
-    const categoryParam = searchParams.get('category');
-    if (categoryParam && categoryMap[categoryParam]) {
-      const categoryName = categoryMap[categoryParam];
-      setSelectedCategory(categoryName);
-      filterProviders('', categoryName);
-    }
+        const categoryParam = searchParams.get('category');
+        if (categoryParam && categoryMap[categoryParam]) {
+          const categoryName = categoryMap[categoryParam];
+          setSelectedCategory(categoryName);
+          filterProviders('', categoryName, finalList);
+        } else {
+          setFilteredProviders(finalList);
+        }
+      } catch (e) {
+        console.error('Providers fetch error', e);
+        setError('Unable to load providers.');
+        setProviders(mockProviders);
+        setFilteredProviders(mockProviders);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProviders();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -200,8 +240,8 @@ const Services = () => {
     filterProviders(searchTerm, category);
   };
 
-  const filterProviders = (term, category) => {
-    let filtered = providers;
+  const filterProviders = (term, category, source = providers) => {
+    let filtered = source;
 
     if (category !== 'All') {
       // Convert display name back to category key for filtering
@@ -223,7 +263,9 @@ const Services = () => {
   };
 
   const requireAuth = (next) => {
-    if (!isAuthenticated) {
+    const token = localStorage.getItem('token');
+    const hasProfile = localStorage.getItem('user') || localStorage.getItem('provider');
+    if (!(token && hasProfile)) {
       setPendingAction(next);
       navigate(RouteList.AUTH);
       return false;
@@ -247,12 +289,12 @@ const Services = () => {
     navigate(`/services/${provider.id}`, { state: { provider } })
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
-    setIsAuthenticated(false);
-    setUser(null);
+  const handleLogout = async () => {
+    await logout();
     toast({ title: "Signed out", description: "You've been signed out successfully." });
+    setShowChatModal(false);
+    setShowBookingModal(false);
+    navigate(RouteList.AUTH, { replace: true });
   };
 
   const handleBack = () => {
@@ -279,7 +321,7 @@ const Services = () => {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4" />
-                  <span className="text-sm">Welcome, {user?.name || user?.email}</span>
+                  <span className="text-sm">Welcome, {principal?.name || principal?.businessName || principal?.email || 'User'}</span>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />
@@ -356,6 +398,12 @@ const Services = () => {
             <div className="text-gray-400 text-lg mb-2">No services found</div>
             <p className="text-gray-600">Try adjusting your search or filter criteria</p>
           </div>
+        )}
+        {loading && (
+          <div className="text-center py-8 text-gray-500">Loading providers…</div>
+        )}
+        {!!error && (
+          <div className="text-center py-4 text-red-600">{error}</div>
         )}
       </div>
 

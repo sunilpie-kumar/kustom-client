@@ -14,6 +14,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
 import { postToServer } from "@/utils/axios"
 import { RouteList } from "@/components/pages/general/paths"
+import { useAuth } from "@/components/pages/general/AuthContext"
 import ApiList from "@/components/pages/general/api-list"
 
 const Auth = () => {
@@ -30,6 +31,7 @@ const Auth = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { toast } = useToast()
+  const { refreshAuth } = useAuth()
 
   useEffect(() => {
     if (location.state?.type) {
@@ -68,12 +70,14 @@ const Auth = () => {
         if (data.exists) {
           toast({ title: "Welcome back!", description: "Logging you in..." })
           if (data.token) localStorage.setItem('token', data.token)
+          if (data.user) localStorage.setItem('user', JSON.stringify(data.user))
           if (userType === 'b2b') {
             if (data.provider) localStorage.setItem('provider', JSON.stringify(data.provider))
-            setTimeout(() => { navigate(RouteList.PROVIDER_DASHBOARD) }, 600)
+            setTimeout(() => { refreshAuth(); navigate(RouteList.PROVIDER_DASHBOARD, { replace: true }) }, 300)
           } else {
             if (data.user) localStorage.setItem('user', JSON.stringify(data.user))
-            setTimeout(() => { navigate(RouteList.DASHBOARD) }, 600)
+            await refreshAuth();
+            navigate(RouteList.DASHBOARD, { replace: true })
           }
           return
         }
@@ -138,8 +142,11 @@ const Auth = () => {
       if (response.success) {
         if (userExists) {
           toast({ title: "Login Successful", description: "Welcome back! Redirecting to your dashboard..." })
-          localStorage.setItem("user", JSON.stringify({ phone: phoneToVerify, authenticated: true, timestamp: Date.now() }))
-          setTimeout(() => { navigate(RouteList.DASHBOARD) }, 1000)
+          // Persist token/user if provided by verify endpoint (optional)
+          if (response.token) localStorage.setItem('token', response.token)
+          if (response.user) localStorage.setItem('user', JSON.stringify(response.user))
+          await refreshAuth();
+          navigate(RouteList.DASHBOARD, { replace: true })
         } else {
           toast({ title: "Phone Verified", description: "Redirecting to complete your profile..." })
           setTimeout(() => {
