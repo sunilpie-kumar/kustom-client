@@ -1,11 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
+  Card, CardContent, CardDescription, CardHeader, CardTitle
 } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
@@ -14,25 +10,13 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import {
-  User,
-  Building2,
-  MapPin,
-  Phone,
-  Mail,
-  Calendar,
-  Settings,
-  BarChart3,
-  Users,
-  LogOut,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  Paperclip,
-  Send
+  User, Building2, MapPin, Phone, Mail, Calendar, Settings, BarChart3, Users, LogOut, CheckCircle2, Clock, 
+  XCircle, Paperclip, Send
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
 import io from 'socket.io-client'
+import { socketBaseURL } from '@/utils/axios'
 import { getFromServer, postMultipart, postToServer } from "@/utils/axios"
 import ApiList from "@/components/pages/general/api-list"
 import { useAuth } from "@/components/pages/general/AuthContext"
@@ -56,6 +40,7 @@ const ProviderDashboard = () => {
   const socketRef = useRef(null)
   const [typing, setTyping] = useState(false)
   const [showTyping, setShowTyping] = useState(false)
+  const currentConvoIdRef = useRef(null)
 
   useEffect(() => {
     document.title = "Provider Dashboard | Profile, Analytics, Messages"
@@ -97,39 +82,59 @@ const ProviderDashboard = () => {
   const bootstrapSocket = () => {
     const token = localStorage.getItem('token')
     if (socketRef.current || !token) return
-    socketRef.current = io('/', { path: '/socket.io', auth: { token } })
+    socketRef.current = io(socketBaseURL, { path: '/socket.io', auth: { token } })
     socketRef.current.on('chat:new_message', async ({ message }) => {
-      if (currentConvo && message.conversationId === currentConvo._id) {
-        setMessages(prev => ([...prev, {
-          id: message._id,
-          text: message.content,
-          sender: message.senderType === 'provider' ? 'me' : 'peer',
-          timestamp: new Date(message.createdAt),
-          attachments: message.attachments || [],
-          readBy: message.readBy || []
-        }]))
+      if (currentConvoIdRef.current && message.conversationId === currentConvoIdRef.current) {
+        setMessages(prev => {
+          if (prev.some(m => m.id === message._id)) return prev
+          // do not append echo of my own just-sent message, since we already appended on send
+          if (message.senderType === 'provider') return prev
+          return [...prev, {
+            id: message._id,
+            text: message.content,
+            sender: 'peer',
+            timestamp: new Date(message.createdAt),
+            attachments: message.attachments || [],
+            readBy: message.readBy || []
+          }]
+        })
         scrollToEnd()
         try {
-          await postToServer(`${ApiList.API_URL_CHAT_MESSAGES}/read/${currentConvo._id}`, {})
-          setConversations(prev => prev.map(c => c._id === currentConvo._id ? { ...c, unreadCount: 0 } : c))
-          setFilteredConvos(prev => prev.map(c => c._id === currentConvo._id ? { ...c, unreadCount: 0 } : c))
-          recomputeUnreadTotal(conversations.map(c => c._id === currentConvo._id ? { ...c, unreadCount: 0 } : c))
-        } catch {}
+          await postToServer(`${ApiList.API_URL_CHAT_MESSAGES}/read/${currentConvoIdRef.current}`, {})
+          setConversations(prev => {
+            const updated = prev.map(c => c._id === currentConvoIdRef.current ? { ...c, unreadCount: 0 } : c)
+            recomputeUnreadTotal(updated)
+            return updated
+          })
+          setFilteredConvos(prev => prev.map(c => c._id === currentConvoIdRef.current ? { ...c, unreadCount: 0 } : c))
+        } catch { }
       } else {
-        setConversations(prev => prev.map(c => c._id === message.conversationId ? { ...c, unreadCount: (c.unreadCount || 0) + 1 } : c))
-        setFilteredConvos(prev => prev.map(c => c._id === message.conversationId ? { ...c, unreadCount: (c.unreadCount || 0) + 1 } : c))
-        recomputeUnreadTotal(conversations)
+        setConversations(prev => {
+          const updated = prev.map(c => c._id === message.conversationId ? { ...c, unreadCount: (c.unreadCount || 0) + 1, lastMessage: message } : c)
+          recomputeUnreadTotal(updated)
+          return updated
+        })
+        setFilteredConvos(prev => prev.map(c => c._id === message.conversationId ? { ...c, unreadCount: (c.unreadCount || 0) + 1, lastMessage: message } : c))
       }
     })
+    socketRef.current.on('chat:notify', ({ conversationId, message }) => {
+      if (currentConvo && conversationId === currentConvo._id) return
+      setConversations(prev => {
+        const updated = prev.map(c => c._id === conversationId ? { ...c, unreadCount: (c.unreadCount || 0) + 1, lastMessage: message } : c)
+        recomputeUnreadTotal(updated)
+        return updated
+      })
+      setFilteredConvos(prev => prev.map(c => c._id === conversationId ? { ...c, unreadCount: (c.unreadCount || 0) + 1, lastMessage: message } : c))
+    })
     socketRef.current.on('chat:read', ({ conversationId, reader }) => {
-      if (!currentConvo || conversationId !== currentConvo._id) return
+      if (!currentConvoIdRef.current || conversationId !== currentConvoIdRef.current) return
       setMessages(prev => prev.map(m => {
         const exists = (m.readBy || []).some(r => r.readerType === reader.participantType && String(r.readerId) === String(reader.participantId))
-        return exists ? m : { ...m, readBy: [ ...(m.readBy||[]), { readerType: reader.participantType, readerId: reader.participantId, readAt: new Date() } ] }
+        return exists ? m : { ...m, readBy: [...(m.readBy || []), { readerType: reader.participantType, readerId: reader.participantId, readAt: new Date() }] }
       }))
     })
     socketRef.current.on('chat:typing', ({ conversationId, isTyping }) => {
-      if (!currentConvo || conversationId !== currentConvo._id) return
+      if (!currentConvoIdRef.current || conversationId !== currentConvoIdRef.current) return
       setTyping(!!isTyping)
       if (isTyping) {
         setShowTyping(true)
@@ -159,6 +164,7 @@ const ProviderDashboard = () => {
   const openConversation = async (convo) => {
     try {
       setCurrentConvo(convo)
+      currentConvoIdRef.current = convo._id
       setLoadingThread(true)
       const msgs = await getFromServer(`${ApiList.API_URL_CHAT_MESSAGES}/${convo._id}`)
       setMessages((msgs?.data?.messages || msgs.messages || msgs).map(m => ({
@@ -172,9 +178,12 @@ const ProviderDashboard = () => {
       bootstrapSocket()
       socketRef.current?.emit('chat:join', { conversationId: convo._id })
       await postToServer(`${ApiList.API_URL_CHAT_MESSAGES}/read/${convo._id}`, {})
-      setConversations(prev => prev.map(c => c._id === convo._id ? { ...c, unreadCount: 0 } : c))
+      setConversations(prev => {
+        const updated = prev.map(c => c._id === convo._id ? { ...c, unreadCount: 0 } : c)
+        recomputeUnreadTotal(updated)
+        return updated
+      })
       setFilteredConvos(prev => prev.map(c => c._id === convo._id ? { ...c, unreadCount: 0 } : c))
-      recomputeUnreadTotal(conversations.map(c => c._id === convo._id ? { ...c, unreadCount: 0 } : c))
       scrollToEnd()
     } finally {
       setLoadingThread(false)
@@ -182,6 +191,7 @@ const ProviderDashboard = () => {
   }
 
   useEffect(() => { loadConversations() }, [])
+  useEffect(() => { bootstrapSocket() }, [])
 
   useEffect(() => {
     if (!socketRef.current || !currentConvo) return
@@ -190,6 +200,11 @@ const ProviderDashboard = () => {
     }, 200)
     return () => clearTimeout(id)
   }, [newMessage, currentConvo])
+
+  // Auto-scroll to bottom whenever messages change
+  useEffect(() => {
+    scrollToEnd()
+  }, [messages])
 
   const handleSendMsg = async (e) => {
     e.preventDefault()
@@ -370,16 +385,16 @@ const ProviderDashboard = () => {
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList className="w-full flex flex-wrap gap-1 bg-card/80 backdrop-blur border rounded-2xl p-0.5 shadow">
             <TabsTrigger value="profile" className="relative h-10 rounded-xl px-4 py-0 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20">
-              <User className="w-4 h-4 mr-2"/> Profile
+              <User className="w-4 h-4 mr-2" /> Profile
             </TabsTrigger>
             <TabsTrigger value="analytics" className="relative h-10 rounded-xl px-4 py-0 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20">
-              <BarChart3 className="w-4 h-4 mr-2"/> Analytics
+              <BarChart3 className="w-4 h-4 mr-2" /> Analytics
             </TabsTrigger>
             <TabsTrigger value="bookings" className="relative h-10 rounded-xl px-4 py-0 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20">
-              <Users className="w-4 h-4 mr-2"/> Bookings
+              <Users className="w-4 h-4 mr-2" /> Bookings
             </TabsTrigger>
             <TabsTrigger value="settings" className="relative h-10 rounded-xl px-4 py-0 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20">
-              <Settings className="w-4 h-4 mr-2"/> Settings
+              <Settings className="w-4 h-4 mr-2" /> Settings
             </TabsTrigger>
             <TabsTrigger value="chat" className="relative h-10 rounded-xl px-4 py-0 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border data-[state=active]:ring-1 data-[state=active]:ring-primary/20">
               Messages
@@ -600,15 +615,15 @@ const ProviderDashboard = () => {
                       const unread = c.unreadCount || 0
                       const active = currentConvo?._id === c._id
                       return (
-                        <button
+                          <button
                           key={c._id}
                           onClick={() => openConversation(c)}
-                          className={`w-full text-left p-2 rounded-xl flex items-center justify-between transition-colors
-                            ${active ? 'bg-accent text-accent-foreground ring-1 ring-primary/20' : 'hover:bg-muted'}
+                            className={`w-full my-1 text-left p-2 rounded-xl flex items-center justify-between transition-colors box-border
+                            ${active ? 'bg-accent text-accent-foreground border-2 border-stone-950' : 'hover:bg-muted border border-transparent'}
                           `}
                         >
                           <div className="min-w-0">
-                            <div className="text-sm font-medium">Customer</div>
+                            <div className="text-sm font-medium">{c.title || 'User'}</div>
                             {last && (
                               <div className="text-xs text-muted-foreground truncate max-w-[180px]">
                                 {last.content || 'Attachment'}
@@ -635,7 +650,7 @@ const ProviderDashboard = () => {
                   )}
                   <div className="space-y-3">
                     {messages.map((m, idx) => {
-                      const prev = messages[idx-1]
+                      const prev = messages[idx - 1]
                       const showDate = !prev || new Date(prev.timestamp).toDateString() !== new Date(m.timestamp).toDateString()
                       const isMine = m.sender === 'me'
                       return (
@@ -650,7 +665,7 @@ const ProviderDashboard = () => {
                           <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                             {!isMine && (
                               <Avatar className="h-6 w-6 mr-2 self-end hidden sm:flex">
-                                <AvatarFallback>U</AvatarFallback>
+                                <AvatarFallback className="text-xs">{(currentConvo?.title?.[0] || 'C').toUpperCase()}</AvatarFallback>
                               </Avatar>
                             )}
                             <div className={`max-w-[75%] rounded-2xl p-3 shadow

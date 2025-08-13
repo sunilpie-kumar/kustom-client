@@ -1,9 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle
+  Dialog, DialogContent, DialogHeader, DialogTitle
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,15 +8,13 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import {
-  Send,
-  Paperclip,
-  FileText,
-  Image as ImageIcon
+  Send, Paperclip, FileText, Image as ImageIcon
 } from "lucide-react"
 
 import { postToServer, getFromServer, postMultipart } from "@/utils/axios"
 import ApiList from "@/components/pages/general/api-list"
 import io from 'socket.io-client'
+import { socketBaseURL } from '@/utils/axios'
 import { useAuth } from "@/components/pages/general/AuthContext"
 
 const ChatModal = ({ isOpen, onClose, provider }) => {
@@ -34,71 +29,96 @@ const ChatModal = ({ isOpen, onClose, provider }) => {
   const socketRef = useRef(null)
   const [conversations, setConversations] = useState([])
   const { principal } = useAuth()
+  const activeConversationIdRef = useRef(null)
 
   useEffect(() => {
     const tokenUser = localStorage.getItem('token')
     if (!provider || !isOpen || !tokenUser) return
-    ;(async () => {
-      try {
-        const peerType = 'provider'
-        const ensure = await postToServer(
-          ApiList.API_URL_CHAT_ENSURE_CONVERSATION,
-          { peerType, peerId: String(provider.id || provider._id) }
-        )
-        const convo = ensure?.data?.conversation || ensure.conversation || ensure
-        setConversation(convo)
-        const msgs = await getFromServer(`${ApiList.API_URL_CHAT_MESSAGES}/${convo._id}`)
-        setMessages((msgs?.data?.messages || msgs.messages || msgs).map(m => ({
-          id: m._id,
-          text: m.content,
-          sender: m.senderType === 'provider' ? 'provider' : 'user',
-          timestamp: new Date(m.createdAt),
-          attachments: m.attachments || [],
-          readBy: m.readBy || []
-        })))
-        try { await postToServer(`${ApiList.API_URL_CHAT_MESSAGES}/read/${convo._id}`, {}) } catch (_) {}
-
+      ; (async () => {
         try {
-          const convs = await getFromServer(ApiList.API_URL_CHAT_CONVERSATIONS)
-          setConversations(convs?.data?.conversations || convs.conversations || [])
-        } catch (_) {}
+          const peerType = 'provider'
+          const ensure = await postToServer(
+            ApiList.API_URL_CHAT_ENSURE_CONVERSATION,
+            { peerType, peerId: String(provider.id || provider._id) }
+          )
+          const convo = ensure?.data?.conversation || ensure.conversation || ensure
+          setConversation(convo)
+          activeConversationIdRef.current = convo._id
+          const msgs = await getFromServer(`${ApiList.API_URL_CHAT_MESSAGES}/${convo._id}`)
+          setMessages((msgs?.data?.messages || msgs.messages || msgs).map(m => ({
+            id: m._id,
+            text: m.content,
+            sender: m.senderType === 'provider' ? 'provider' : 'user',
+            timestamp: new Date(m.createdAt),
+            attachments: m.attachments || [],
+            readBy: m.readBy || []
+          })))
+          try { await postToServer(`${ApiList.API_URL_CHAT_MESSAGES}/read/${convo._id}`, {}) } catch (_) { }
 
-        if (!socketRef.current) {
-          socketRef.current = io('/', { path: '/socket.io', auth: { token: tokenUser } })
-          socketRef.current.on('chat:new_message', ({ message }) => {
-            if (message.conversationId !== convo._id) return
-            setMessages(prev => [...prev, {
-              id: message._id,
-              text: message.content,
-              sender: message.senderType === 'provider' ? 'provider' : 'user',
-              timestamp: new Date(message.createdAt),
-              attachments: message.attachments || [],
-              readBy: message.readBy || []
-            }])
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-          })
-          socketRef.current.on('chat:read', ({ conversationId, reader }) => {
-            if (conversationId !== convo._id) return
-            setMessages(prev => prev.map(m => {
-              const exists = (m.readBy || []).some(r => r.readerType === reader.participantType && String(r.readerId) === String(reader.participantId))
-              return exists ? m : { ...m, readBy: [ ...(m.readBy||[]), { readerType: reader.participantType, readerId: reader.participantId, readAt: new Date() } ] }
-            }))
-          })
-          socketRef.current.on('chat:typing', ({ conversationId, isTyping }) => {
-            if (conversationId === convo._id) {
-              setTyping(!!isTyping)
-              if (isTyping) {
-                setShowTyping(true)
-                setTimeout(() => setShowTyping(false), 1500)
-              }
+          try {
+            const convs = await getFromServer(ApiList.API_URL_CHAT_CONVERSATIONS)
+            let list = convs?.data?.conversations || convs.conversations || []
+            // Ensure provider name shows in the list even if server didn't include title
+            list = list.map(c => {
+              if (c.title) return c
+              // If this convo matches the opened provider, fill title from provider
+              const matchesOpened = String(c._id) === String(convo._id)
+              if (matchesOpened) return { ...c, title: provider?.businessName || provider?.name || 'Provider' }
+              return c
+            })
+            // Also inject current convo if API returned empty
+            if (!list.some(c => String(c._id) === String(convo._id))) {
+              list = [{ ...convo, title: provider?.businessName || provider?.name || 'Provider' }, ...list]
             }
-          })
+            setConversations(list)
+          } catch (_) { }
+
+          if (!socketRef.current) {
+            socketRef.current = io(socketBaseURL, { path: '/socket.io', auth: { token: tokenUser } })
+            socketRef.current.on('chat:new_message', async ({ message }) => {
+              if (message.conversationId !== activeConversationIdRef.current) return
+              // Ignore echo of my own message in the user modal
+              if (message.senderType === 'user') return
+              setMessages(prev => {
+                if (prev.some(m => m.id === message._id)) return prev
+                return [...prev, {
+                  id: message._id,
+                  text: message.content,
+                  sender: message.senderType === 'provider' ? 'provider' : 'user',
+                  timestamp: new Date(message.createdAt),
+                  attachments: message.attachments || [],
+                  readBy: message.readBy || []
+                }]
+              })
+              try {
+                if (message.senderType === 'provider') {
+                  await postToServer(`${ApiList.API_URL_CHAT_MESSAGES}/read/${message.conversationId}`, {})
+                }
+              } catch (_) { }
+              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+            })
+            socketRef.current.on('chat:read', ({ conversationId, reader }) => {
+              if (conversationId !== activeConversationIdRef.current) return
+              setMessages(prev => prev.map(m => {
+                const exists = (m.readBy || []).some(r => r.readerType === reader.participantType && String(r.readerId) === String(reader.participantId))
+                return exists ? m : { ...m, readBy: [...(m.readBy || []), { readerType: reader.participantType, readerId: reader.participantId, readAt: new Date() }] }
+              }))
+            })
+            socketRef.current.on('chat:typing', ({ conversationId, isTyping }) => {
+              if (conversationId === activeConversationIdRef.current) {
+                setTyping(!!isTyping)
+                if (isTyping) {
+                  setShowTyping(true)
+                  setTimeout(() => setShowTyping(false), 1500)
+                }
+              }
+            })
+          }
+          socketRef.current?.emit('chat:join', { conversationId: convo._id })
+        } catch (e) {
+          console.error('Chat init error:', e)
         }
-        socketRef.current?.emit('chat:join', { conversationId: convo._id })
-      } catch (e) {
-        console.error('Chat init error:', e)
-      }
-    })()
+      })()
   }, [provider, isOpen])
 
   useEffect(() => {
@@ -137,7 +157,7 @@ const ChatModal = ({ isOpen, onClose, provider }) => {
           }
           setAttachments(prev => [...prev, attachment])
         })
-        .catch(() => {})
+        .catch(() => { })
     })
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
@@ -164,16 +184,16 @@ const ChatModal = ({ isOpen, onClose, provider }) => {
     try {
       const sent = await postToServer(ApiList.API_URL_CHAT_MESSAGES, payload)
       const m = sent?.data?.message || sent.message || sent
-      setMessages(prev => ([
-        ...prev,
-        {
+      setMessages(prev => {
+        if (prev.some(x => x.id === m._id)) return prev
+        return ([...prev, {
           id: m._id,
           text: m.content,
           sender: 'user',
           timestamp: new Date(m.createdAt || Date.now()),
           attachments: m.attachments || []
-        }
-      ]))
+        }])
+      })
       setNewMessage("")
       setAttachments([])
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -213,9 +233,7 @@ const ChatModal = ({ isOpen, onClose, provider }) => {
                 <AvatarImage src={provider?.image} alt={`Avatar of ${provider?.name || 'Provider'}`} />
                 <AvatarFallback>{(provider?.name?.[0] || 'P')?.toUpperCase()}</AvatarFallback>
               </Avatar>
-              <span className="font-medium">
-                Chat {provider?.name ? `with ${provider.name}` : ''}
-              </span>
+              <span className="font-medium">Chat</span>
             </div>
           </DialogTitle>
         </DialogHeader>
@@ -238,6 +256,7 @@ const ChatModal = ({ isOpen, onClose, provider }) => {
                           try {
                             const msgs = await getFromServer(`${ApiList.API_URL_CHAT_MESSAGES}/${c._id}`)
                             setConversation(c)
+                            activeConversationIdRef.current = c._id
                             setMessages((msgs?.data?.messages || msgs.messages || msgs).map(m => ({
                               id: m._id,
                               text: m.content,
@@ -248,14 +267,20 @@ const ChatModal = ({ isOpen, onClose, provider }) => {
                             })))
                             await postToServer(`${ApiList.API_URL_CHAT_MESSAGES}/read/${c._id}`, {})
                             socketRef.current?.emit('chat:join', { conversationId: c._id })
-                          } catch(e) {}
+                          } catch (e) { }
                         }}
                         className={`w-full text-left p-2 rounded-xl flex items-center justify-between transition-colors
-                          ${active ? 'bg-accent text-accent-foreground ring-1 ring-primary/20' : 'hover:bg-muted'}
+                          ${active ? 'bg-accent text-accent-foreground border-2 border-stone-950' : 'hover:bg-muted'}
                         `}
                       >
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium truncate">{c.title || 'Conversation'}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">{
+                            (typeof c.title === 'string' && c.title.trim().length > 0)
+                              ? c.title
+                              : ((provider && conversation && String(c._id) === String(conversation._id))
+                                ? (provider.businessName || provider.name || 'Provider')
+                                : 'Provider')
+                          }</div>
                           {last && (
                             <div className="text-xs text-muted-foreground truncate">
                               {last.content || 'Attachment'}

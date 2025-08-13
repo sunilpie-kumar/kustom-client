@@ -35,6 +35,9 @@ axiosInstance.interceptors.response.use(
 
 export default axiosInstance;
 
+// Expose the socket base URL so Socket.IO can connect to the same origin as the API host
+export const socketBaseURL = base;
+
 export const postToServer = async (url, data, method = '') => {
   try {
     const response = await axiosInstance.post(url, data);
